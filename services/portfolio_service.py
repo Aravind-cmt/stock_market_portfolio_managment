@@ -1,4 +1,4 @@
-from services.db import execute_query, execute_update, TransactionScope
+from services.db import execute_query, execute_update
 
 def get_user_portfolio(user_id):
     query = """
@@ -71,7 +71,7 @@ def get_user_portfolio_summary(user_id):
         'asset_distribution': asset_map
     }
 
-def get_user_transactions(user_id, stock_id=None, tx_type=None, start_date=None, end_date=None):
+def get_user_transactions(user_id, stock_id=None, tx_type=None, start_date=None, end_date=None, transaction_id=None):
     query = """
     SELECT 
         t.transaction_id,
@@ -93,6 +93,9 @@ def get_user_transactions(user_id, stock_id=None, tx_type=None, start_date=None,
     WHERE t.user_id = %s
     """
     params = [user_id]
+    if transaction_id:
+        query += " AND t.transaction_id = %s"
+        params.append(transaction_id)
     if stock_id:
         query += " AND t.stock_id = %s"
         params.append(stock_id)

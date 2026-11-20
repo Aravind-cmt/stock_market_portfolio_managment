@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Trade Terminal - Buy & Sell Equities{% endblock %}
-{% block page_title %}Trade Terminal{% endblock %}
+{% block title %}Trade Terminal - Order Execution{% endblock %}
+{% block page_title %}Order Execution Console{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center py-3">
@@ -10,7 +10,7 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h3 class="fw-bold text-white mb-1"><i class="bi bi-arrow-left-right text-primary me-2"></i>Order Execution</h3>
+                    <h4 class="fw-bold text-white mb-1"><i class="bi bi-arrow-left-right text-primary me-2"></i>Trade Terminal</h4>
                     <p class="text-secondary small mb-0">ACID-compliant simulated order placement on Indian equities</p>
                 </div>
                 <div class="wallet-badge">
@@ -21,11 +21,11 @@
 
             <!-- Buy / Sell Action Switch -->
             <div class="d-flex gap-2 p-1 bg-dark rounded border border-secondary mb-4">
-                <button type="button" id="toggleBuy" class="btn flex-grow-1 {% if action == 'buy' %}btn-success{% else %}btn-outline-secondary border-0 text-secondary{% endif %} fw-bold py-2">
-                    <i class="bi bi-bag-plus-fill me-1"></i> BUY SHARES
+                <button type="button" id="toggleBuy" class="btn flex-grow-1 {% if action == 'buy' %}btn-success{% else %}btn-outline-secondary border-0 text-secondary{% endif %} fw-semibold py-2">
+                    <i class="bi bi-bag-plus me-1"></i> BUY SHARES
                 </button>
-                <button type="button" id="toggleSell" class="btn flex-grow-1 {% if action == 'sell' %}btn-danger{% else %}btn-outline-secondary border-0 text-secondary{% endif %} fw-bold py-2">
-                    <i class="bi bi-cash-stack me-1"></i> SELL SHARES
+                <button type="button" id="toggleSell" class="btn flex-grow-1 {% if action == 'sell' %}btn-danger{% else %}btn-outline-secondary border-0 text-secondary{% endif %} fw-semibold py-2">
+                    <i class="bi bi-cash me-1"></i> SELL SHARES
                 </button>
             </div>
 
@@ -33,7 +33,7 @@
             <form id="tradeForm" method="POST" action="{% if action == 'sell' %}{{ url_for('trade.sell') }}{% else %}{{ url_for('trade.buy') }}{% endif %}">
                 <!-- Stock Select Dropdown -->
                 <div class="mb-3">
-                    <label for="stockSelect" class="form-label text-secondary small fw-semibold">Select Equity / Stock</label>
+                    <label for="stockSelect" class="form-label text-secondary small fw-semibold">Select Equity</label>
                     <select name="stock_id" id="stockSelect" class="form-select form-select-lg" required>
                         {% for s in stocks %}
                         <option value="{{ s.stock_id }}" 
@@ -59,7 +59,7 @@
                         <div class="col-6 text-end">
                             <span class="text-secondary small d-block">Your Holdings</span>
                             <h5 class="fw-bold text-info mb-0" id="displayOwned">
-                                {{ owned_quantity }} shares
+                                {{ owned_quantity }} units
                             </h5>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <label for="tradeQty" class="form-label text-secondary small fw-semibold mb-0">Order Quantity</label>
-                        <small class="text-muted" id="qtyHelper">Enter number of shares</small>
+                        <small class="text-muted" id="qtyHelper">Enter number of units</small>
                     </div>
                     <input type="number" name="quantity" id="tradeQty" class="form-control form-control-lg" value="1" min="1" required>
                 </div>
@@ -77,7 +77,7 @@
                 <!-- Calculation Preview Box -->
                 <div class="p-3 bg-dark rounded border border-secondary mb-4">
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-secondary">Estimated Total:</span>
+                        <span class="text-secondary small">Estimated Total:</span>
                         <strong class="fs-5 text-white" id="displayTotal">₹0.00</strong>
                     </div>
                     <div class="d-flex justify-content-between small">
@@ -88,8 +88,8 @@
 
                 <!-- Submit Button -->
                 <div class="d-grid">
-                    <button type="submit" id="submitTradeBtn" class="btn {% if action == 'sell' %}btn-danger{% else %}btn-success{% endif %} btn-lg fw-bold py-3">
-                        <i class="bi bi-shield-check me-2"></i> Confirm Order Execution
+                    <button type="submit" id="submitTradeBtn" class="btn {% if action == 'sell' %}btn-danger{% else %}btn-success{% endif %} btn-lg fw-semibold py-3">
+                        <i class="bi bi-shield-check me-1"></i> Confirm Order Execution
                     </button>
                 </div>
             </form>
@@ -125,12 +125,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const stockId = parseInt(selectedOpt.value, 10);
         const qty = parseInt(tradeQty.value, 10) || 0;
 
-        // Check user holdings
         const heldObj = holdings.find(h => h.stock_id === stockId);
         const owned = heldObj ? heldObj.total_quantity : 0;
 
         displayPrice.textContent = '₹' + price.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-        displayOwned.textContent = `${owned} shares`;
+        displayOwned.textContent = `${owned} units`;
 
         const total = qty * price;
         displayTotal.textContent = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2 });
@@ -140,33 +139,33 @@ document.addEventListener('DOMContentLoaded', function () {
             displayRemainingCash.textContent = '₹' + rem.toLocaleString('en-IN', { minimumFractionDigits: 2 });
             displayRemainingCash.className = rem >= 0 ? 'fw-semibold text-success' : 'fw-semibold text-danger';
             tradeQty.removeAttribute('max');
-            qtyHelper.textContent = 'Enter number of shares to buy';
+            qtyHelper.textContent = 'Enter units to buy';
         } else {
             const rem = userCash + total;
             displayRemainingCash.textContent = '₹' + rem.toLocaleString('en-IN', { minimumFractionDigits: 2 });
             displayRemainingCash.className = 'fw-semibold text-success';
             tradeQty.max = owned;
-            qtyHelper.textContent = `Maximum available to sell: ${owned} shares`;
+            qtyHelper.textContent = `Maximum available to sell: ${owned} units`;
         }
     }
 
     toggleBuy.addEventListener('click', function () {
         currentAction = 'buy';
-        toggleBuy.className = 'btn flex-grow-1 btn-success fw-bold py-2';
-        toggleSell.className = 'btn flex-grow-1 btn-outline-secondary border-0 text-secondary fw-bold py-2';
+        toggleBuy.className = 'btn flex-grow-1 btn-success fw-semibold py-2';
+        toggleSell.className = 'btn flex-grow-1 btn-outline-secondary border-0 text-secondary fw-semibold py-2';
         tradeForm.action = "{{ url_for('trade.buy') }}";
-        submitBtn.className = 'btn btn-success btn-lg fw-bold py-3';
-        submitBtn.innerHTML = '<i class="bi bi-shield-check me-2"></i> Confirm Buy Order';
+        submitBtn.className = 'btn btn-success btn-lg fw-semibold py-3';
+        submitBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i> Confirm Buy Order';
         updateCalculations();
     });
 
     toggleSell.addEventListener('click', function () {
         currentAction = 'sell';
-        toggleSell.className = 'btn flex-grow-1 btn-danger fw-bold py-2';
-        toggleBuy.className = 'btn flex-grow-1 btn-outline-secondary border-0 text-secondary fw-bold py-2';
+        toggleSell.className = 'btn flex-grow-1 btn-danger fw-semibold py-2';
+        toggleBuy.className = 'btn flex-grow-1 btn-outline-secondary border-0 text-secondary fw-semibold py-2';
         tradeForm.action = "{{ url_for('trade.sell') }}";
-        submitBtn.className = 'btn btn-danger btn-lg fw-bold py-3';
-        submitBtn.innerHTML = '<i class="bi bi-shield-check me-2"></i> Confirm Sell Order';
+        submitBtn.className = 'btn btn-danger btn-lg fw-semibold py-3';
+        submitBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i> Confirm Sell Order';
         updateCalculations();
     });
 

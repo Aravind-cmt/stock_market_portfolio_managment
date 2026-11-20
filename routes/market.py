@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, request, session
-from routes.auth import login_required
 from services.market_service import get_all_stocks, get_stock_by_id, get_sectors, get_stock_price_history
 from services.portfolio_service import get_user_watchlist, get_user_portfolio_summary
 
@@ -9,8 +8,9 @@ market_bp = Blueprint('market', __name__)
 def index():
     search = request.args.get('search', '').strip()
     sector = request.args.get('sector', 'ALL')
+    sort_by = request.args.get('sort', 'symbol_asc')
     
-    stocks = get_all_stocks(search=search, sector=sector)
+    stocks = get_all_stocks(search=search, sector=sector, sort_by=sort_by)
     sectors = get_sectors()
     
     watchlist_stock_ids = []
@@ -27,6 +27,7 @@ def index():
         stocks=stocks,
         sectors=sectors,
         selected_sector=sector,
+        sort_by=sort_by,
         search=search,
         watchlist_stock_ids=watchlist_stock_ids,
         cash_balance=cash_balance

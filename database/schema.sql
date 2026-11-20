@@ -1,6 +1,7 @@
 -- =============================================================================
 -- Stock Market Portfolio Management System
 -- Database Schema Definition (MySQL 8.0+)
+-- Adheres to 1NF, 2NF, 3NF/BCNF Relational Normalization
 -- =============================================================================
 
 CREATE DATABASE IF NOT EXISTS stock_portfolio_db
@@ -9,25 +10,26 @@ CREATE DATABASE IF NOT EXISTS stock_portfolio_db
 
 USE stock_portfolio_db;
 
--- Disable foreign key checks during schema creation
+-- Temporarily disable foreign key checks during schema re-creation
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS Stock_Price_History;
 DROP TABLE IF EXISTS Password_Reset;
 DROP TABLE IF EXISTS Audit_Log;
+DROP TABLE IF EXISTS User_Roles;
+DROP TABLE IF EXISTS Roles;
 DROP TABLE IF EXISTS Watchlist;
 DROP TABLE IF EXISTS Portfolio;
 DROP TABLE IF EXISTS Transactions;
 DROP TABLE IF EXISTS Stocks;
-DROP TABLE IF EXISTS Admin;
 DROP TABLE IF EXISTS Users;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- -----------------------------------------------------------------------------
 -- 1. Users Table
--- Normalization: 1NF, 2NF, 3NF compliant. Stores user authentication, profile,
--- and paper-trading cash balance.
+-- Stores user authentication credentials, contact profile, account status,
+-- and simulated paper-trading wallet balance.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,7 +46,7 @@ CREATE TABLE Users (
 
 -- -----------------------------------------------------------------------------
 -- 2. Stocks Table
--- Represents listed equities with current market price and sector classification.
+-- Master equity registry with current market price and sector classification.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Stocks (
     stock_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -63,7 +65,7 @@ CREATE TABLE Stocks (
 
 -- -----------------------------------------------------------------------------
 -- 3. Transactions Table
--- Records every BUY and SELL order executed by users (Financial Audit Trail).
+-- Immutable financial audit ledger recording every BUY and SELL order.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Transactions (
     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -86,8 +88,8 @@ CREATE TABLE Transactions (
 
 -- -----------------------------------------------------------------------------
 -- 4. Portfolio Table
--- Represents aggregate holdings per user per stock.
--- Unique constraint ensures 1 row per user-stock pair.
+-- Junction table resolving M:N relationship between Users and Stocks.
+-- Maintains net quantity and dynamically updated weighted average buy price.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Portfolio (
     portfolio_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -105,7 +107,7 @@ CREATE TABLE Portfolio (
 
 -- -----------------------------------------------------------------------------
 -- 5. Watchlist Table
--- Tracks stocks monitored by users.
+-- Tracks equities monitored by users with unique user-stock combination.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Watchlist (
     watchlist_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -118,36 +120,51 @@ CREATE TABLE Watchlist (
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------------------------------------------
--- 6. Admin Table
--- Administrative users with elevated privileges.
+-- 6. Roles Table
+-- System roles for Role-Based Access Control (RBAC).
 -- -----------------------------------------------------------------------------
-CREATE TABLE Admin (
-    admin_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(120) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'SUPER_ADMIN',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE Roles (
+    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------------------------------------------
--- 7. Audit_Log Table
--- Security and compliance audit trail tracking all state modifications.
+-- 7. User_Roles Table
+-- Junction table assigning roles to users with auditing of assigner.
+-- -----------------------------------------------------------------------------
+CREATE TABLE User_Roles (
+    user_id INT NOT NULL,
+    role_id INT NOT NULL,
+    assigned_by INT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES Roles(role_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES Users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- -----------------------------------------------------------------------------
+-- 8. Audit_Log Table
+-- Complete compliance and operational audit log tracking state transitions.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Audit_Log (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NULL,
+    acting_user_id INT NULL,
+    affected_user_id INT NULL,
     action VARCHAR(50) NOT NULL,
     table_name VARCHAR(50) NOT NULL,
     record_id INT NULL,
-    action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    previous_value TEXT NULL,
+    new_value TEXT NULL,
     description TEXT,
-    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
+    action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (acting_user_id) REFERENCES Users(user_id) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (affected_user_id) REFERENCES Users(user_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------------------------------------------
--- 8. Password_Reset Table
--- Secure token management for password recovery workflow.
+-- 9. Password_Reset Table
+-- Secure token management for user password recovery workflows.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Password_Reset (
     reset_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -160,8 +177,8 @@ CREATE TABLE Password_Reset (
 ) ENGINE=InnoDB;
 
 -- -----------------------------------------------------------------------------
--- 9. Stock_Price_History Table
--- Historical stock prices for technical analysis and trend charts.
+-- 10. Stock_Price_History Table
+-- Historical stock price ticks for technical analysis and trend charts.
 -- -----------------------------------------------------------------------------
 CREATE TABLE Stock_Price_History (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -171,16 +188,3 @@ CREATE TABLE Stock_Price_History (
     FOREIGN KEY (stock_id) REFERENCES Stocks(stock_id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT chk_hist_price CHECK (price > 0.00)
 ) ENGINE=InnoDB;
-
--- -----------------------------------------------------------------------------
--- Performance Indexes for Fast Lookups
--- -----------------------------------------------------------------------------
-CREATE INDEX idx_stocks_symbol ON Stocks(symbol);
-CREATE INDEX idx_stocks_sector ON Stocks(sector);
-CREATE INDEX idx_transactions_user ON Transactions(user_id);
-CREATE INDEX idx_transactions_stock ON Transactions(stock_id);
-CREATE INDEX idx_transactions_date ON Transactions(transaction_date);
-CREATE INDEX idx_portfolio_user ON Portfolio(user_id);
-CREATE INDEX idx_watchlist_user ON Watchlist(user_id);
-CREATE INDEX idx_price_history_stock_date ON Stock_Price_History(stock_id, recorded_at);
-CREATE INDEX idx_audit_log_timestamp ON Audit_Log(action_timestamp);

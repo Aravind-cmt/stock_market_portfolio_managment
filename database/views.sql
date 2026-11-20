@@ -5,6 +5,8 @@
 
 USE stock_portfolio_db;
 
+DROP VIEW IF EXISTS vw_stock_wise_investment;
+DROP VIEW IF EXISTS vw_user_role_overview;
 DROP VIEW IF EXISTS vw_daily_transaction_summary;
 DROP VIEW IF EXISTS vw_stock_market_overview;
 DROP VIEW IF EXISTS vw_user_performance;
@@ -116,3 +118,42 @@ FROM Transactions t
 WHERE t.transaction_status = 'COMPLETED'
 GROUP BY t.transaction_date, t.transaction_type
 ORDER BY t.transaction_date DESC, t.transaction_type;
+
+-- -----------------------------------------------------------------------------
+-- 5. View: vw_user_role_overview
+-- Displays user identities alongside their assigned RBAC system roles.
+-- -----------------------------------------------------------------------------
+CREATE VIEW vw_user_role_overview AS
+SELECT 
+    u.user_id,
+    u.name,
+    u.email,
+    u.account_status,
+    r.role_id,
+    r.role_name,
+    ur.assigned_at,
+    assigner.name AS assigned_by_name
+FROM Users u
+JOIN User_Roles ur ON u.user_id = ur.user_id
+JOIN Roles r ON ur.role_id = r.role_id
+LEFT JOIN Users assigner ON ur.assigned_by = assigner.user_id;
+
+-- -----------------------------------------------------------------------------
+-- 6. View: vw_stock_wise_investment
+-- Aggregates capital allocation, units held, and valuation per equity.
+-- -----------------------------------------------------------------------------
+CREATE VIEW vw_stock_wise_investment AS
+SELECT 
+    s.stock_id,
+    s.symbol,
+    s.company_name,
+    s.sector,
+    s.current_price,
+    COUNT(DISTINCT p.user_id) AS total_investors,
+    COALESCE(SUM(p.total_quantity), 0) AS total_shares_held,
+    COALESCE(SUM(ROUND(p.total_quantity * p.average_buy_price, 2)), 0.00) AS total_capital_invested,
+    COALESCE(SUM(ROUND(p.total_quantity * s.current_price, 2)), 0.00) AS total_current_valuation,
+    ROUND(COALESCE(SUM(ROUND(p.total_quantity * s.current_price, 2)), 0.00) - COALESCE(SUM(ROUND(p.total_quantity * p.average_buy_price, 2)), 0.00), 2) AS net_unrealized_pnl
+FROM Stocks s
+LEFT JOIN Portfolio p ON s.stock_id = p.stock_id AND p.total_quantity > 0
+GROUP BY s.stock_id, s.symbol, s.company_name, s.sector, s.current_price;

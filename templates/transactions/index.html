@@ -23,6 +23,10 @@
     <!-- Filter Form -->
     <div class="card-custom p-3 mb-4">
         <form method="GET" action="{{ url_for('transactions.index') }}" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label text-secondary small mb-1">Transaction ID</label>
+                <input type="number" name="transaction_id" class="form-control" placeholder="e.g. 101" value="{{ transaction_id or '' }}">
+            </div>
             <div class="col-md-3">
                 <label class="form-label text-secondary small mb-1">Filter by Stock</label>
                 <select name="stock_id" class="form-select">
@@ -42,16 +46,19 @@
                     <option value="SELL" {% if selected_type == 'SELL' %}selected{% endif %}>SELL Orders Only</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label text-secondary small mb-1">Start Date</label>
                 <input type="date" name="start_date" class="form-control" value="{{ start_date or '' }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label text-secondary small mb-1">End Date</label>
                 <input type="date" name="end_date" class="form-control" value="{{ end_date or '' }}">
             </div>
-            <div class="col-md-1 d-grid">
-                <button type="submit" class="btn btn-primary" title="Apply Filter"><i class="bi bi-filter"></i></button>
+            <div class="col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-primary flex-grow-1" title="Apply Filter"><i class="bi bi-filter"></i></button>
+                {% if transaction_id or selected_stock_id or (selected_type and selected_type != 'ALL') or start_date or end_date %}
+                <a href="{{ url_for('transactions.index') }}" class="btn btn-outline-secondary" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+                {% endif %}
             </div>
         </form>
     </div>

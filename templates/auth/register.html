@@ -8,11 +8,11 @@
     <div class="col-md-7 col-lg-6">
         <div class="card-custom p-4 p-md-5">
             <div class="text-center mb-4">
-                <div class="stat-icon bg-success bg-opacity-25 text-success mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.8rem;">
-                    <i class="bi bi-person-plus-fill"></i>
+                <div class="stat-icon bg-success bg-opacity-25 text-success mx-auto mb-3" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="bi bi-person-plus"></i>
                 </div>
-                <h3 class="fw-bold text-white">Create Investor Account</h3>
-                <p class="text-secondary small">Start trading instantly with ₹1,00,000 simulated paper cash</p>
+                <h4 class="fw-bold text-white mb-1">Create Investor Account</h4>
+                <p class="text-secondary small">Instant registration with ₹1,00,000 simulated paper trading cash</p>
             </div>
 
             <form method="POST" action="{{ url_for('auth.register') }}">
@@ -46,26 +46,26 @@
                         <label for="password" class="form-label text-secondary small">Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-lock"></i></span>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="At least 6 chars" required>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="At least 6 characters" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <label for="confirm_password" class="form-label text-secondary small">Confirm Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-shield-check"></i></span>
-                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-type password" required>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Re-enter password" required>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-3 bg-dark rounded border border-secondary mb-4 small text-secondary">
-                    <i class="bi bi-gift-fill text-warning me-2"></i>
-                    Upon registration, your account will automatically be credited with <strong>₹1,00,000</strong> simulated paper cash in the <code>Users</code> table.
+                    <i class="bi bi-info-circle text-info me-2"></i>
+                    Upon registration, your account will automatically be assigned the <strong>USER</strong> role and credited with <strong>₹1,00,000</strong> simulated paper trading balance.
                 </div>
 
                 <div class="d-grid mb-3">
-                    <button type="submit" class="btn btn-primary py-2 fw-bold">
-                        <i class="bi bi-check-circle me-2"></i> Complete Registration
+                    <button type="submit" class="btn btn-primary py-2 fw-semibold">
+                        <i class="bi bi-check-circle me-1"></i> Register Account
                     </button>
                 </div>
             </form>

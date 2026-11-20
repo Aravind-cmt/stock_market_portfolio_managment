@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Add Admin - Super Administrator{% endblock %}
+{% block page_title %}Promote User to Administrator{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h4 class="fw-bold text-white mb-1">
+                <i class="bi bi-person-plus text-warning me-2"></i>Promote User to Admin
+            </h4>
+            <p class="text-secondary small mb-0">Select an active registered investor to promote to the Administrator role.</p>
+        </div>
+        <a href="{{ url_for('admin.admin_management') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Admin Management
+        </a>
+    </div>
+
+    <!-- Search Box -->
+    <div class="card-custom p-3 mb-4">
+        <form method="GET" action="{{ url_for('admin.add_admin') }}" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search registered investors by name or email..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-filter me-1"></i> Search Users</button>
+                {% if search %}
+                <a href="{{ url_for('admin.add_admin') }}" class="btn btn-outline-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- User Selection Table -->
+    <div class="card-custom p-0 overflow-hidden">
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-white mb-0">Eligible Registered Investors ({{ users|length }} Available)</h6>
+            <small class="text-secondary">Only accounts with role USER are shown</small>
+        </div>
+
+        {% if users %}
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Email Address</th>
+                        <th>Phone</th>
+                        <th>Current Role</th>
+                        <th>Registration Date</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="text-secondary">#{{ u.user_id }}</td>
+                        <td><strong class="text-white">{{ u.name }}</strong></td>
+                        <td><span class="text-secondary">{{ u.email }}</span></td>
+                        <td><small class="text-secondary">{{ u.phone }}</small></td>
+                        <td><span class="badge bg-secondary">USER</span></td>
+                        <td><small class="text-secondary">{{ str(u.created_at)[:10] }}</small></td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold"
+                                    data-bs-toggle="modal" data-bs-target="#confirmPromoteModal{{ u.user_id }}">
+                                <i class="bi bi-shield-plus me-1"></i> Promote to Admin
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Confirmation Modal for Promotion -->
+                    <div class="modal fade" id="confirmPromoteModal{{ u.user_id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <form method="POST" action="{{ url_for('admin.add_admin') }}">
+                                    <input type="hidden" name="target_user_id" value="{{ u.user_id }}">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title fw-bold">Confirm Administrator Promotion</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-secondary mb-3">
+                                            Are you sure you want to promote the following user to the <strong class="text-warning">Administrator</strong> role?
+                                        </p>
+                                        <div class="p-3 bg-dark rounded border border-secondary mb-3 small">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="text-secondary">User ID:</span>
+                                                <strong class="text-white">#{{ u.user_id }}</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="text-secondary">Full Name:</span>
+                                                <strong class="text-white">{{ u.name }}</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="text-secondary">Email:</span>
+                                                <span class="text-info">{{ u.email }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-secondary">Account Status:</span>
+                                                <span class="badge bg-success">{{ u.account_status }}</span>
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block">
+                                            Administrators gain authority to manage equities, review all investor transactions, and update stock prices.
+                                        </small>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-warning fw-bold text-dark">Confirm Promotion</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-secondary">
+            <i class="bi bi-people fs-1 d-block mb-3 text-muted"></i>
+            <h6>No registered investors match your search</h6>
+            <p class="small text-secondary mb-0">Ensure the user is registered and has active account status.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

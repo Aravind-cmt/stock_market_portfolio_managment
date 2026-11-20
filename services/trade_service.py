@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from services.db import TransactionScope, get_db_mode, execute_query
+from services.db import TransactionScope
 
 def execute_buy(user_id, stock_id, quantity):
     """
@@ -83,9 +83,13 @@ def execute_buy(user_id, stock_id, quantity):
 
         # 6. Audit Log
         tx.execute("""
-            INSERT INTO Audit_Log (user_id, action, table_name, record_id, description)
-            VALUES (%s, 'BUY_ORDER', 'Transactions', %s, %s)
-        """, (user_id, tx_id, f"Purchased {quantity} shares of {stock['symbol']} at ₹{price:,.2f} (Total: ₹{total_amount:,.2f})"))
+            INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
+            VALUES (%s, %s, 'BUY_ORDER', 'Transactions', %s, %s, %s, %s)
+        """, (
+            user_id, user_id, tx_id,
+            f"Cash: ₹{cash_balance:,.2f}", f"Cash: ₹{(cash_balance - total_amount):,.2f}",
+            f"Purchased {quantity} shares of {stock['symbol']} at ₹{price:,.2f} (Total: ₹{total_amount:,.2f})"
+        ))
 
         return {
             'success': True,
@@ -106,7 +110,7 @@ def execute_sell(user_id, stock_id, quantity):
     with TransactionScope() as tx:
         # 1. Verify User
         user = tx.execute(
-            "SELECT user_id, name, cash_balance, account_status FROM Users WHERE user_id = %s",
+            "SELECT user_id, name, cash_balance, account_status FROM Users WHERE user_id = %s FOR UPDATE",
             (user_id,)
         ).fetchone()
 
@@ -140,6 +144,7 @@ def execute_sell(user_id, stock_id, quantity):
         sell_price = float(stock['current_price'])
         total_revenue = round(sell_price * quantity, 2)
         realized_pnl = round((sell_price - avg_buy_price) * quantity, 2)
+        old_cash = float(user['cash_balance'])
 
         # 4. Credit cash to user balance
         tx.execute(
@@ -169,11 +174,12 @@ def execute_sell(user_id, stock_id, quantity):
 
         # 7. Audit Log
         tx.execute("""
-            INSERT INTO Audit_Log (user_id, action, table_name, record_id, description)
-            VALUES (%s, 'SELL_ORDER', 'Transactions', %s, %s)
+            INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
+            VALUES (%s, %s, 'SELL_ORDER', 'Transactions', %s, %s, %s, %s)
         """, (
-            user_id, 
-            tx_id, 
+            user_id, user_id, tx_id,
+            f"Shares: {current_qty}, Cash: ₹{old_cash:,.2f}",
+            f"Shares: {current_qty - quantity}, Cash: ₹{(old_cash + total_revenue):,.2f}",
             f"Sold {quantity} shares of {stock['symbol']} at ₹{sell_price:,.2f}. Realized P&L: ₹{realized_pnl:,.2f}"
         ))
 

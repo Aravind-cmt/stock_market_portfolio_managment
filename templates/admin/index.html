@@ -1,70 +1,79 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - System Metrics{% endblock %}
+{% block title %}Admin Dashboard - StockPulse{% endblock %}
 {% block page_title %}System Administration Dashboard{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h3 class="fw-bold text-white mb-1">
-                <i class="bi bi-cpu text-warning me-2"></i>System Overview
-            </h3>
-            <p class="text-secondary small mb-0">Logged in as Admin: <strong class="text-warning">{{ session.get('admin_username') }}</strong> ({{ session.get('admin_role') }})</p>
+            <h4 class="fw-bold text-white mb-1">
+                <i class="bi bi-speedometer2 text-warning me-2"></i>System Oversight
+            </h4>
+            <p class="text-secondary small mb-0">Authenticated as: <strong class="text-warning">{{ session.get('user_name') }}</strong> ({{ user_role }})</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ url_for('admin.stocks') }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-database-gear me-1"></i> Manage Stocks</a>
-            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-info btn-sm"><i class="bi bi-people me-1"></i> View Users</a>
+            {% if is_super_admin %}
+            <a href="{{ url_for('admin.admin_management') }}" class="btn btn-warning btn-sm fw-semibold text-dark">
+                <i class="bi bi-shield-check me-1"></i> Admin Management
+            </a>
+            {% endif %}
+            <a href="{{ url_for('admin.stocks') }}" class="btn btn-outline-warning btn-sm">
+                <i class="bi bi-database me-1"></i> Manage Stocks
+            </a>
+            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-people me-1"></i> User Accounts
+            </a>
         </div>
     </div>
 
-    <!-- System Metric Cards -->
+    <!-- 6 Key Administrative Metric Cards -->
     <div class="row g-3 mb-4">
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card-custom stat-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-secondary small text-uppercase fw-semibold">Registered Users</span>
-                    <div class="stat-icon bg-info bg-opacity-25 text-info"><i class="bi bi-people-fill"></i></div>
-                </div>
-                <h2 class="fw-bold text-white mb-0">{{ metrics.total_users }}</h2>
+                <span class="text-secondary small text-uppercase fw-semibold d-block mb-1">Total Users</span>
+                <h3 class="fw-bold text-white mb-0">{{ metrics.total_users }}</h3>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card-custom stat-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-secondary small text-uppercase fw-semibold">Listed Stocks</span>
-                    <div class="stat-icon bg-primary bg-opacity-25 text-primary"><i class="bi bi-graph-up"></i></div>
-                </div>
-                <h2 class="fw-bold text-white mb-0">{{ metrics.total_stocks }}</h2>
+                <span class="text-secondary small text-uppercase fw-semibold d-block mb-1">Listed Equities</span>
+                <h3 class="fw-bold text-white mb-0">{{ metrics.total_stocks }}</h3>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card-custom stat-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-secondary small text-uppercase fw-semibold">Total Orders</span>
-                    <div class="stat-icon bg-success bg-opacity-25 text-success"><i class="bi bi-receipt"></i></div>
-                </div>
-                <h2 class="fw-bold text-white mb-0">{{ metrics.total_transactions }}</h2>
+                <span class="text-secondary small text-uppercase fw-semibold d-block mb-1">Total Admins</span>
+                <h3 class="fw-bold text-warning mb-0">{{ metrics.total_admins }}</h3>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-sm-6 col-xl-2">
             <div class="card-custom stat-card">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-secondary small text-uppercase fw-semibold">Trading Volume</span>
-                    <div class="stat-icon bg-warning bg-opacity-25 text-warning"><i class="bi bi-currency-rupee"></i></div>
-                </div>
-                <h2 class="fw-bold text-white mb-0">₹{{ "{:,.0f}".format(metrics.total_volume) }}</h2>
+                <span class="text-secondary small text-uppercase fw-semibold d-block mb-1">Total Orders</span>
+                <h3 class="fw-bold text-white mb-0">{{ metrics.total_transactions }}</h3>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-2">
+            <div class="card-custom stat-card">
+                <span class="text-secondary small text-uppercase fw-semibold d-block mb-1">BUY Orders</span>
+                <h3 class="fw-bold text-success mb-0">{{ metrics.total_buy_transactions }}</h3>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-2">
+            <div class="card-custom stat-card">
+                <span class="text-secondary small text-uppercase fw-semibold d-block mb-1">SELL Orders</span>
+                <h3 class="fw-bold text-danger mb-0">{{ metrics.total_sell_transactions }}</h3>
             </div>
         </div>
     </div>
 
-    <!-- Recent Transactions & User Overview -->
+    <!-- Tables Row: Recent Transactions & Recent User Registrations -->
     <div class="row g-4">
-        <!-- Recent Transactions -->
+        <!-- Recent Platform Orders -->
         <div class="col-lg-7">
             <div class="card-custom p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Latest System Transactions</h5>
+                    <h6 class="fw-bold text-white mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Latest System Transactions</h6>
                     <a href="{{ url_for('admin.transactions') }}" class="small text-info text-decoration-none">View All <i class="bi bi-chevron-right"></i></a>
                 </div>
                 <div class="table-responsive">
@@ -84,9 +93,7 @@
                             {% for tx in metrics.recent_transactions %}
                             <tr>
                                 <td class="text-secondary">#{{ tx.transaction_id }}</td>
-                                <td>
-                                    <small class="text-white d-block">{{ tx.user_name }}</small>
-                                </td>
+                                <td><small class="text-white">{{ tx.user_name }}</small></td>
                                 <td><strong class="text-white">{{ tx.symbol }}</strong></td>
                                 <td>
                                     <span class="badge {% if tx.transaction_type == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">
@@ -104,15 +111,15 @@
             </div>
         </div>
 
-        <!-- Registered Users Summary -->
+        <!-- Recent Registered Users -->
         <div class="col-lg-5">
             <div class="card-custom p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-people text-info me-2"></i>Registered Investors</h5>
-                    <a href="{{ url_for('admin.users') }}" class="small text-info text-decoration-none">Manage <i class="bi bi-chevron-right"></i></a>
+                    <h6 class="fw-bold text-white mb-0"><i class="bi bi-people text-info me-2"></i>Recent User Registrations</h6>
+                    <a href="{{ url_for('admin.users') }}" class="small text-info text-decoration-none">Manage Users <i class="bi bi-chevron-right"></i></a>
                 </div>
                 <div class="list-group list-group-flush bg-transparent">
-                    {% for u in metrics.users_list[:6] %}
+                    {% for u in metrics.recent_users %}
                     <div class="list-group-item bg-transparent border-secondary text-white px-0 py-2">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -120,10 +127,10 @@
                                 <small class="text-secondary">{{ u.email }}</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge {% if u.account_status == 'ACTIVE' %}bg-success{% else %}bg-warning{% endif %} mb-1">
-                                    {{ u.account_status }}
+                                <span class="badge {% if u.role_name == 'SUPER_ADMIN' %}bg-danger{% elif u.role_name == 'ADMIN' %}bg-warning text-dark{% else %}bg-secondary{% endif %} mb-1">
+                                    {{ u.role_name }}
                                 </span>
-                                <small class="text-secondary d-block">{{ u.stocks_owned }} stocks</small>
+                                <small class="text-secondary d-block">{{ str(u.created_at)[:10] }}</small>
                             </div>
                         </div>
                     </div>

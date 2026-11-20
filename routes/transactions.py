@@ -9,6 +9,7 @@ transactions_bp = Blueprint('transactions', __name__)
 @login_required
 def index():
     user_id = session['user_id']
+    transaction_id = request.args.get('transaction_id', type=int)
     stock_id = request.args.get('stock_id', type=int)
     tx_type = request.args.get('type', 'ALL')
     start_date = request.args.get('start_date')
@@ -19,7 +20,8 @@ def index():
         stock_id=stock_id,
         tx_type=tx_type,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        transaction_id=transaction_id
     )
     stocks = get_all_stocks()
 
@@ -30,5 +32,6 @@ def index():
         selected_stock_id=stock_id,
         selected_type=tx_type,
         start_date=start_date,
-        end_date=end_date
+        end_date=end_date,
+        transaction_id=transaction_id
     )

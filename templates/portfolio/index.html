@@ -39,7 +39,7 @@
     <!-- Holdings Table Card -->
     <div class="card-custom p-0 overflow-hidden mb-4">
         <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold text-white mb-0"><i class="bi bi-briefcase text-primary me-2"></i>Holdings Breakdown ({{ summary.holdings|length }} Equities)</h5>
+            <h6 class="fw-bold text-white mb-0"><i class="bi bi-briefcase text-primary me-2"></i>Holdings Breakdown ({{ summary.holdings|length }} Equities)</h6>
             <a href="{{ url_for('trade.index') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> Trade Stocks</a>
         </div>
 
@@ -50,12 +50,12 @@
                     <tr>
                         <th>Stock / Company</th>
                         <th>Sector</th>
-                        <th>Quantity</th>
-                        <th>Avg. Buy Price</th>
-                        <th>Market Price</th>
+                        <th>Units</th>
+                        <th>Avg Cost (₹)</th>
+                        <th>Market Price (₹)</th>
                         <th>Total Invested</th>
-                        <th>Current Value</th>
-                        <th>Profit / Loss</th>
+                        <th>Current Valuation</th>
+                        <th>Unrealized P&L</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -102,9 +102,9 @@
         {% else %}
         <div class="text-center py-5 text-secondary">
             <i class="bi bi-briefcase fs-1 d-block mb-3 text-muted"></i>
-            <h5>Your portfolio is currently empty</h5>
-            <p class="small text-secondary mb-3">Buy your first shares from our catalog of 20+ prominent Indian equities.</p>
-            <a href="{{ url_for('market.index') }}" class="btn btn-primary">Browse Stock Market</a>
+            <h6>Your portfolio is currently empty</h6>
+            <p class="small text-secondary mb-3">Execute your first order from our catalog of 20+ prominent Indian equities.</p>
+            <a href="{{ url_for('market.index') }}" class="btn btn-primary btn-sm">Browse Equities</a>
         </div>
         {% endif %}
     </div>
@@ -114,7 +114,7 @@
     <div class="row g-4">
         <div class="col-md-6">
             <div class="card-custom p-4">
-                <h5 class="fw-bold text-white mb-3"><i class="bi bi-pie-chart text-primary me-2"></i>Sector Weightage</h5>
+                <h6 class="fw-bold text-white mb-3"><i class="bi bi-pie-chart text-primary me-2"></i>Sector Weightage</h6>
                 <div style="height: 280px; position: relative;">
                     <canvas id="sectorChart"></canvas>
                 </div>
@@ -122,7 +122,7 @@
         </div>
         <div class="col-md-6">
             <div class="card-custom p-4">
-                <h5 class="fw-bold text-white mb-3"><i class="bi bi-bar-chart-line text-info me-2"></i>Holdings Valuation Breakdown</h5>
+                <h6 class="fw-bold text-white mb-3"><i class="bi bi-bar-chart-line text-info me-2"></i>Holdings Valuation Breakdown</h6>
                 <div style="height: 280px; position: relative;">
                     <canvas id="assetChart"></canvas>
                 </div>

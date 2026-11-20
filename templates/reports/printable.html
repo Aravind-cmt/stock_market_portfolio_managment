@@ -3,42 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ report.title }} - StockPulse Report</title>
+    <title>{{ report.title }} - StockPulse Financial Statement</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; color: #000; background: #fff; margin: 20px; }
-        h1 { font-size: 20px; border-bottom: 2px solid #000; padding-bottom: 8px; }
-        h2 { font-size: 14px; color: #444; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th { background-color: #f0f0f0; border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 11px; }
-        td { border: 1px solid #ccc; padding: 7px; font-size: 11px; }
-        .profit { color: green; font-weight: bold; }
-        .loss { color: red; font-weight: bold; }
-        .header-info { margin-bottom: 16px; }
-        .header-info span { display: inline-block; margin-right: 24px; }
-        .footer { margin-top: 20px; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
-        @media print { body { margin: 10px; } }
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11px; color: #111; background: #fff; margin: 24px; line-height: 1.4; }
+        .header-title { font-size: 18px; font-weight: 700; border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 12px; }
+        .meta-grid { display: flex; justify-content: space-between; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 12px; font-size: 11px; }
+        .meta-col { flex: 1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th { background-color: #f3f4f6; border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        td { border: 1px solid #e2e8f0; padding: 6px 8px; font-size: 11px; }
+        .profit { color: #047857; font-weight: 600; }
+        .loss { color: #b91c1c; font-weight: 600; }
+        .footer { margin-top: 24px; font-size: 9px; color: #64748b; border-top: 1px solid #cbd5e1; padding-top: 8px; }
+        .print-btn { background: #0f172a; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-bottom: 12px; }
+        @media print { .print-btn { display: none; } body { margin: 8px; } }
     </style>
 </head>
 <body>
-    <h1>StockPulse — {{ report.title }}</h1>
-    <div class="header-info">
-        <span><strong>Investor:</strong> {{ report.summary.user.name }}</span>
-        <span><strong>Email:</strong> {{ report.summary.user.email }}</span>
-        <span><strong>Generated:</strong> {{ report.report_type }}</span>
-        <span><strong>Total Records:</strong> {{ report.count }}</span>
-    </div>
-    <div class="header-info">
-        <span><strong>Portfolio Value:</strong> ₹{{ "{:,.2f}".format(report.summary.total_current_value) }}</span>
-        <span><strong>Total Invested:</strong> ₹{{ "{:,.2f}".format(report.summary.total_invested) }}</span>
-        <span><strong>Overall P&L:</strong> ₹{{ "{:,.2f}".format(report.summary.total_pnl) }} ({{ report.summary.pnl_percent }}%)</span>
+    <button class="print-btn" onclick="window.print();">Print / Save as PDF</button>
+
+    <div class="header-title">StockPulse — {{ report.title }}</div>
+    
+    <div class="meta-grid">
+        <div class="meta-col">
+            <div><strong>Investor Account:</strong> {{ report.summary.user.name }}</div>
+            <div><strong>Account Email:</strong> {{ report.summary.user.email }}</div>
+        </div>
+        <div class="meta-col">
+            <div><strong>Statement Type:</strong> {{ report.report_type }}</div>
+            <div><strong>Total Records:</strong> {{ report.count }}</div>
+        </div>
+        <div class="meta-col" style="text-align: right;">
+            <div><strong>Portfolio Valuation:</strong> ₹{{ "{:,.2f}".format(report.summary.total_current_value) }}</div>
+            <div><strong>Net P&L:</strong> ₹{{ "{:,.2f}".format(report.summary.total_pnl) }} ({{ report.summary.pnl_percent }}%)</div>
+        </div>
     </div>
 
     {% if report.report_type in ['all_transactions', 'buy_transactions', 'sell_transactions'] %}
     <table>
         <thead>
             <tr>
-                <th>Tx ID</th><th>Date</th><th>Time</th><th>Symbol</th><th>Company</th>
-                <th>Type</th><th>Quantity</th><th>Price (₹)</th><th>Total Amount (₹)</th><th>Status</th>
+                <th>Tx ID</th><th>Execution Date</th><th>Time</th><th>Symbol</th><th>Company Name</th>
+                <th>Type</th><th>Units</th><th>Price (₹)</th><th>Total (₹)</th><th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -51,8 +57,8 @@
                 <td>{{ r.company_name }}</td>
                 <td>{{ r.transaction_type }}</td>
                 <td>{{ r.quantity }}</td>
-                <td>{{ r.price }}</td>
-                <td>{{ r.total_amount }}</td>
+                <td>₹{{ "{:,.2f}".format(r.price) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.total_amount) }}</td>
                 <td>{{ r.transaction_status }}</td>
             </tr>
             {% endfor %}
@@ -63,10 +69,10 @@
     <table>
         <thead>
             <tr>
-                <th>Symbol</th><th>Company</th><th>Sector</th><th>Qty</th>
+                <th>Symbol</th><th>Company Name</th><th>Sector</th><th>Units</th>
                 <th>Avg Buy Price</th><th>Current Price</th>
-                <th>Investment (₹)</th><th>Market Value (₹)</th>
-                <th>Profit/Loss (₹)</th><th>Return (%)</th>
+                <th>Total Investment</th><th>Current Valuation</th>
+                <th>Profit / Loss</th><th>Return (%)</th>
             </tr>
         </thead>
         <tbody>
@@ -76,12 +82,12 @@
                 <td>{{ r.company_name }}</td>
                 <td>{{ r.sector }}</td>
                 <td>{{ r.total_quantity }}</td>
-                <td>₹{{ r.average_buy_price }}</td>
-                <td>₹{{ r.current_price }}</td>
-                <td>₹{{ r.total_investment }}</td>
-                <td>₹{{ r.current_value }}</td>
+                <td>₹{{ "{:,.2f}".format(r.average_buy_price) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.current_price) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.total_investment) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.current_value) }}</td>
                 <td class="{% if r.profit_loss >= 0 %}profit{% else %}loss{% endif %}">
-                    ₹{{ r.profit_loss }}
+                    ₹{{ "{:,.2f}".format(r.profit_loss) }}
                 </td>
                 <td class="{% if r.profit_loss_percent >= 0 %}profit{% else %}loss{% endif %}">
                     {{ r.profit_loss_percent }}%
@@ -90,12 +96,42 @@
             {% endfor %}
         </tbody>
     </table>
+
+    {% elif report.report_type == 'stock_wise_investment' %}
+    <table>
+        <thead>
+            <tr>
+                <th>Symbol</th><th>Company Name</th><th>Sector</th><th>Units Held</th>
+                <th>Avg Cost Price</th><th>Current Price</th>
+                <th>Total Invested</th><th>Current Valuation</th>
+                <th>Unrealized P&L</th><th>Return (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in report.records %}
+            <tr>
+                <td><strong>{{ r.symbol }}</strong></td>
+                <td>{{ r.company_name }}</td>
+                <td>{{ r.sector }}</td>
+                <td>{{ r.total_quantity }}</td>
+                <td>₹{{ "{:,.2f}".format(r.average_buy_price) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.current_price) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.total_investment) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.current_value) }}</td>
+                <td class="{% if r.unrealized_pnl >= 0 %}profit{% else %}loss{% endif %}">
+                    ₹{{ "{:,.2f}".format(r.unrealized_pnl) }}
+                </td>
+                <td class="{% if r.return_percentage >= 0 %}profit{% else %}loss{% endif %}">
+                    {{ r.return_percentage }}%
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% endif %}
 
     <div class="footer">
-        <strong>Disclaimer:</strong> This report is generated from demonstration (paper trading) data for academic DBMS laboratory purposes only. 
-        Prices are simulated and do not represent live market prices. &copy; 2026 StockPulse DBMS Project.
+        <strong>Academic Demonstration Notice:</strong> This statement is generated from simulated paper-trading records within a MySQL relational database for DBMS laboratory evaluation. Not affiliated with real financial exchanges. Generated &copy; 2026 StockPulse.
     </div>
-    <script>window.onload = function() { window.print(); };</script>
 </body>
 </html>

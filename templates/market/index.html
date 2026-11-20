@@ -1,38 +1,46 @@
 {% extends "base.html" %}
 
 {% block title %}Stock Market - Indian Equities Registry{% endblock %}
-{% block page_title %}Indian Stock Market{% endblock %}
+{% block page_title %}Indian Equities Market{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
     <!-- Notice Banner -->
-    <div class="alert alert-info py-2 px-3 d-flex align-items-center justify-content-between mb-4 small" style="background-color: rgba(58, 134, 255, 0.12); border-color: rgba(58, 134, 255, 0.3); color: #93c5fd;">
-        <span><i class="bi bi-info-circle-fill me-2"></i><strong>Demonstration Data:</strong> Stock market prices shown are realistic demonstration quotes for this DBMS academic project.</span>
+    <div class="alert alert-dark border-secondary py-2 px-3 d-flex align-items-center justify-content-between mb-4 small">
+        <span class="text-secondary"><i class="bi bi-info-circle me-2 text-info"></i><strong>Demonstration Quotes:</strong> Equities quotes reflect demonstration prices for DBMS laboratory evaluation.</span>
         {% if session.get('user_id') %}
-        <span class="text-white">Your Wallet: <strong>₹{{ "{:,.2f}".format(cash_balance) }}</strong></span>
+        <span class="text-white">Wallet: <strong>₹{{ "{:,.2f}".format(cash_balance) }}</strong></span>
         {% endif %}
     </div>
 
-    <!-- Filter & Search Bar -->
+    <!-- Filter, Search & Sort Bar -->
     <div class="card-custom p-3 mb-4">
         <form method="GET" action="{{ url_for('market.index') }}" class="row g-2 align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Search by Symbol (e.g. RELIANCE, TCS) or Company..." value="{{ search }}">
+                    <input type="text" name="search" class="form-control" placeholder="Search Symbol (RELIANCE, TCS) or Company..." value="{{ search }}">
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <select name="sector" class="form-select" onchange="this.form.submit()">
-                    <option value="ALL" {% if selected_sector == 'ALL' %}selected{% endif %}>All Sectors (All Listed Equities)</option>
+                    <option value="ALL" {% if selected_sector == 'ALL' %}selected{% endif %}>All Sectors</option>
                     {% for sec in sectors %}
                     <option value="{{ sec }}" {% if selected_sector == sec %}selected{% endif %}>{{ sec }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3 d-flex gap-2">
+            <div class="col-md-3">
+                <select name="sort" class="form-select" onchange="this.form.submit()">
+                    <option value="symbol_asc" {% if sort_by == 'symbol_asc' %}selected{% endif %}>Sort by: Symbol (A-Z)</option>
+                    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Sort by: Price (High to Low)</option>
+                    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Sort by: Price (Low to High)</option>
+                    <option value="change_desc" {% if sort_by == 'change_desc' %}selected{% endif %}>Sort by: Top Gainers</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-filter me-1"></i> Filter</button>
-                {% if search or (selected_sector and selected_sector != 'ALL') %}
+                {% if search or (selected_sector and selected_sector != 'ALL') or sort_by %}
                 <a href="{{ url_for('market.index') }}" class="btn btn-outline-secondary">Reset</a>
                 {% endif %}
             </div>
@@ -42,8 +50,8 @@
     <!-- Stock Market Table -->
     <div class="card-custom p-0 overflow-hidden">
         <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold text-white mb-0">Listed Equities ({{ stocks|length }} Stocks)</h5>
-            <small class="text-secondary">Click stock ticker for detailed price chart</small>
+            <h6 class="fw-bold text-white mb-0">Listed Equities ({{ stocks|length }} Stocks)</h6>
+            <small class="text-secondary">Select symbol to view historical price line chart</small>
         </div>
         <div class="table-responsive">
             <table class="table table-custom mb-0">
@@ -56,7 +64,7 @@
                         <th>Day Change</th>
                         <th>52W Range</th>
                         <th>Volume</th>
-                        <th class="text-end" style="min-width: 140px;">Quick Trade</th>
+                        <th class="text-end" style="min-width: 140px;">Order Execution</th>
                     </tr>
                 </thead>
                 <tbody>

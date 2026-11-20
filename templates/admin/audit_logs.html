@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Audit Logs - Admin Panel{% endblock %}
-{% block page_title %}System Audit Log{% endblock %}
+{% block title %}System Audit Logs - Admin Panel{% endblock %}
+{% block page_title %}Security & Operational Audit Log{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
     <div class="mb-4">
-        <h3 class="fw-bold text-white mb-1"><i class="bi bi-journal-text text-info me-2"></i>System Audit Trail ({{ logs|length }} Recent Events)</h3>
-        <p class="text-secondary small mb-0">Automated database trigger and application event log — ordered by most recent activity.</p>
+        <h4 class="fw-bold text-white mb-1"><i class="bi bi-journal-text text-info me-2"></i>System Audit Trail</h4>
+        <p class="text-secondary small mb-0">Immutable compliance record tracking authentication events, trading orders, role promotions, and equity adjustments.</p>
     </div>
 
     <div class="card-custom p-0 overflow-hidden">
@@ -17,24 +17,34 @@
                     <tr>
                         <th>Log ID</th>
                         <th>Timestamp</th>
-                        <th>User</th>
+                        <th>Acting User</th>
+                        <th>Affected User</th>
                         <th>Action</th>
                         <th>Target Table</th>
-                        <th>Record ID</th>
+                        <th>Prev Value</th>
+                        <th>New Value</th>
                         <th>Description</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
-                        <td class="text-secondary">{{ log.log_id }}</td>
+                        <td class="text-secondary">#{{ log.log_id }}</td>
                         <td><small class="text-white">{{ str(log.action_timestamp)[:19] }}</small></td>
                         <td>
-                            {% if log.user_name %}
-                            <strong class="text-white d-block">{{ log.user_name }}</strong>
-                            <small class="text-secondary">{{ log.user_email }}</small>
+                            {% if log.actor_name %}
+                            <strong class="text-white d-block">{{ log.actor_name }}</strong>
+                            <small class="text-secondary">{{ log.actor_email }}</small>
                             {% else %}
-                            <span class="badge bg-warning text-dark">SYSTEM</span>
+                            <span class="badge bg-secondary text-light">SYSTEM</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if log.target_name %}
+                            <span class="text-white d-block">{{ log.target_name }}</span>
+                            <small class="text-secondary">{{ log.target_email }}</small>
+                            {% else %}
+                            <span class="text-secondary">—</span>
                             {% endif %}
                         </td>
                         <td>
@@ -45,19 +55,22 @@
                                 'USER_LOGIN': 'bg-info text-dark',
                                 'USER_LOGOUT': 'bg-secondary',
                                 'PRICE_UPDATE': 'bg-warning text-dark',
-                                'ADMIN_LOGIN': 'bg-warning text-dark',
+                                'ROLE_CHANGE': 'bg-danger',
                                 'ADD_STOCK': 'bg-primary',
                                 'DELETE_STOCK': 'bg-danger',
-                                'PASSWORD_CHANGE': 'bg-info text-dark'
+                                'PASSWORD_CHANGE': 'bg-info text-dark',
+                                'PASSWORD_RESET': 'bg-warning text-dark',
+                                'STATUS_CHANGE': 'bg-warning text-dark'
                             } %}
                             <span class="badge {{ action_colors.get(log.action, 'bg-secondary') }}">
                                 {{ log.action }}
                             </span>
                         </td>
                         <td><code class="text-info">{{ log.table_name }}</code></td>
-                        <td class="text-secondary">{{ log.record_id or '—' }}</td>
+                        <td><small class="text-secondary">{{ log.previous_value or '—' }}</small></td>
+                        <td><small class="text-white">{{ log.new_value or '—' }}</small></td>
                         <td>
-                            <small class="text-secondary">{{ (log.description or '')[:80] }}{% if (log.description or '')|length > 80 %}...{% endif %}</small>
+                            <small class="text-secondary">{{ (log.description or '')[:90] }}{% if (log.description or '')|length > 90 %}...{% endif %}</small>
                         </td>
                     </tr>
                     {% endfor %}

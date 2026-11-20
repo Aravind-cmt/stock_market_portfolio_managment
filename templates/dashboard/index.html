@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}Investor Dashboard - StockPulse{% endblock %}
-{% block page_title %}Portfolio Dashboard{% endblock %}
+{% block title %}Dashboard - Stock Market Portfolio Management System{% endblock %}
+{% block page_title %}Investor Dashboard{% endblock %}
 
 {% block content %}
 <div class="container-fluid p-0">
-    <!-- Welcome Header & Quick Action -->
+    <!-- Top Action Bar -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-            <h3 class="fw-bold text-white mb-1">Hello, {{ session.get('user_name') }}! 👋</h3>
-            <p class="text-secondary small mb-0">Here is your live investment overview and portfolio performance metrics.</p>
+            <h4 class="fw-bold text-white mb-1">Investor: {{ session.get('user_name') }}</h4>
+            <p class="text-secondary small mb-0">Live investment summary and portfolio performance indicators.</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ url_for('trade.index') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> New Trade
+            <a href="{{ url_for('trade.index') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-arrow-left-right me-1"></i> New Trade
             </a>
-            <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-download me-1"></i> Export Reports
             </a>
         </div>
@@ -33,7 +33,7 @@
                     </div>
                 </div>
                 <h3 class="fw-bold text-white mb-1">₹{{ "{:,.2f}".format(summary.total_current_value) }}</h3>
-                <small class="text-secondary">Across {{ summary.holdings_count }} active holdings</small>
+                <small class="text-secondary">{{ summary.holdings_count }} active holdings</small>
             </div>
         </div>
 
@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <h3 class="fw-bold text-white mb-1">₹{{ "{:,.2f}".format(summary.total_invested) }}</h3>
-                <small class="text-secondary">Cost basis across shares held</small>
+                <small class="text-secondary">Weighted cost basis</small>
             </div>
         </div>
 
@@ -64,7 +64,7 @@
                     {% if summary.total_pnl >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(summary.total_pnl) }}
                 </h3>
                 <span class="{% if summary.total_pnl >= 0 %}profit-badge{% else %}loss-badge{% endif %}">
-                    {% if summary.pnl_percent >= 0 %}+{% endif %}{{ summary.pnl_percent }}% Overall Return
+                    {% if summary.pnl_percent >= 0 %}+{% endif %}{{ summary.pnl_percent }}% Return
                 </span>
             </div>
         </div>
@@ -90,8 +90,8 @@
         <div class="col-lg-5">
             <div class="card-custom p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-pie-chart text-primary me-2"></i>Sector Allocation</h5>
-                    <small class="text-secondary">By Market Value</small>
+                    <h6 class="fw-bold text-white mb-0"><i class="bi bi-pie-chart text-primary me-2"></i>Sector Allocation</h6>
+                    <small class="text-secondary">Market Valuation</small>
                 </div>
                 {% if summary.sector_distribution %}
                 <div style="height: 280px; position: relative;">
@@ -100,7 +100,7 @@
                 {% else %}
                 <div class="text-center py-5 text-secondary">
                     <i class="bi bi-pie-chart fs-1 d-block mb-2 text-muted"></i>
-                    No stock holdings yet. Buy stocks to view sector distribution!
+                    No stock holdings yet. Execute buy orders to populate sector allocation.
                 </div>
                 {% endif %}
             </div>
@@ -110,8 +110,8 @@
         <div class="col-lg-7">
             <div class="card-custom p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-bar-chart-line text-info me-2"></i>Holdings Valuation</h5>
-                    <a href="{{ url_for('portfolio.index') }}" class="small text-info text-decoration-none">View All Holdings <i class="bi bi-chevron-right"></i></a>
+                    <h6 class="fw-bold text-white mb-0"><i class="bi bi-bar-chart-line text-info me-2"></i>Holdings Valuation</h6>
+                    <a href="{{ url_for('portfolio.index') }}" class="small text-info text-decoration-none">View Portfolio <i class="bi bi-chevron-right"></i></a>
                 </div>
                 {% if summary.asset_distribution %}
                 <div style="height: 280px; position: relative;">
@@ -120,7 +120,7 @@
                 {% else %}
                 <div class="text-center py-5 text-secondary">
                     <i class="bi bi-briefcase fs-1 d-block mb-2 text-muted"></i>
-                    Your portfolio is currently empty. Visit the Stock Market to begin!
+                    Your portfolio is currently empty. Visit the Stocks page to begin trading.
                 </div>
                 {% endif %}
             </div>
@@ -133,8 +133,8 @@
         <div class="col-lg-7">
             <div class="card-custom p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-briefcase text-success me-2"></i>Your Stocks</h5>
-                    <a href="{{ url_for('portfolio.index') }}" class="btn btn-sm btn-outline-light">Manage Portfolio</a>
+                    <h6 class="fw-bold text-white mb-0"><i class="bi bi-briefcase text-success me-2"></i>Active Stock Holdings</h6>
+                    <a href="{{ url_for('portfolio.index') }}" class="btn btn-sm btn-outline-light">Manage Holdings</a>
                 </div>
                 {% if summary.holdings %}
                 <div class="table-responsive">
@@ -142,12 +142,12 @@
                         <thead>
                             <tr>
                                 <th>Stock</th>
-                                <th>Qty</th>
-                                <th>Avg Buy</th>
+                                <th>Units</th>
+                                <th>Avg Cost</th>
                                 <th>Market Price</th>
-                                <th>Current Value</th>
+                                <th>Valuation</th>
                                 <th>P&L</th>
-                                <th>Action</th>
+                                <th>Trade</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -184,7 +184,7 @@
                 </div>
                 {% else %}
                 <div class="text-center py-4 text-secondary">
-                    <p class="mb-2">No shares owned yet.</p>
+                    <p class="mb-2">No shares owned in portfolio.</p>
                     <a href="{{ url_for('market.index') }}" class="btn btn-primary btn-sm">Explore Indian Stocks</a>
                 </div>
                 {% endif %}
@@ -195,7 +195,7 @@
         <div class="col-lg-5">
             <div class="card-custom p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Recent Trades</h5>
+                    <h6 class="fw-bold text-white mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Recent Executions</h6>
                     <a href="{{ url_for('transactions.index') }}" class="small text-info text-decoration-none">View All</a>
                 </div>
                 {% if recent_transactions %}
@@ -208,9 +208,9 @@
                                     {{ tx.transaction_type }}
                                 </span>
                                 <strong>{{ tx.symbol }}</strong>
-                                <small class="text-secondary">({{ tx.quantity }} shares)</small>
+                                <small class="text-secondary">({{ tx.quantity }} units)</small>
                             </div>
-                            <small class="text-muted">{{ tx.transaction_date }} • {{ tx.transaction_time }}</small>
+                            <small class="text-muted">{{ tx.transaction_date }} {{ tx.transaction_time }}</small>
                         </div>
                         <div class="text-end">
                             <span class="fw-bold">₹{{ "{:,.2f}".format(tx.total_amount) }}</span>

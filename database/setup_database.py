@@ -5,7 +5,7 @@ import pymysql
 # Add root directory to sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import Config
-from services.db import get_db_mode, execute_update, execute_query, _sqlite_path
+from services.db import get_db_mode, _sqlite_path
 
 def split_sql_statements(content):
     """
@@ -58,6 +58,7 @@ def setup_mysql():
     sql_files = [
         'schema.sql',
         'sample_data.sql',
+        'indexes.sql',
         'views.sql',
         'procedures.sql',
         'triggers.sql'
@@ -74,7 +75,7 @@ def setup_mysql():
                 try:
                     cursor.execute(stmt)
                 except Exception as e:
-                    print(f"  [Warning in {filename}]: {e} on statement:\n{stmt[:80]}...")
+                    print(f"  [Notice in {filename}]: {e} on statement:\n{stmt[:80]}...")
         else:
             print(f"File {filename} not found.")
             
@@ -96,11 +97,12 @@ def setup_sqlite():
     DROP TABLE IF EXISTS Stock_Price_History;
     DROP TABLE IF EXISTS Password_Reset;
     DROP TABLE IF EXISTS Audit_Log;
+    DROP TABLE IF EXISTS User_Roles;
+    DROP TABLE IF EXISTS Roles;
     DROP TABLE IF EXISTS Watchlist;
     DROP TABLE IF EXISTS Portfolio;
     DROP TABLE IF EXISTS Transactions;
     DROP TABLE IF EXISTS Stocks;
-    DROP TABLE IF EXISTS Admin;
     DROP TABLE IF EXISTS Users;
 
     CREATE TABLE Users (
@@ -174,24 +176,35 @@ def setup_sqlite():
         FOREIGN KEY (stock_id) REFERENCES Stocks(stock_id) ON DELETE CASCADE
     );
 
-    CREATE TABLE Admin (
-        admin_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'SUPER_ADMIN',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE Roles (
+        role_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role_name TEXT NOT NULL UNIQUE
+    );
+
+    CREATE TABLE User_Roles (
+        user_id INTEGER NOT NULL,
+        role_id INTEGER NOT NULL,
+        assigned_by INTEGER NULL,
+        assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, role_id),
+        FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (role_id) REFERENCES Roles(role_id) ON DELETE CASCADE,
+        FOREIGN KEY (assigned_by) REFERENCES Users(user_id) ON DELETE SET NULL
     );
 
     CREATE TABLE Audit_Log (
         log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NULL,
+        acting_user_id INTEGER NULL,
+        affected_user_id INTEGER NULL,
         action TEXT NOT NULL,
         table_name TEXT NOT NULL,
         record_id INTEGER NULL,
-        action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        previous_value TEXT NULL,
+        new_value TEXT NULL,
         description TEXT,
-        FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE SET NULL
+        action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (acting_user_id) REFERENCES Users(user_id) ON DELETE SET NULL,
+        FOREIGN KEY (affected_user_id) REFERENCES Users(user_id) ON DELETE SET NULL
     );
 
     CREATE TABLE Password_Reset (
@@ -220,6 +233,7 @@ def setup_sqlite():
     CREATE INDEX idx_portfolio_user ON Portfolio(user_id);
     CREATE INDEX idx_watchlist_user ON Watchlist(user_id);
     CREATE INDEX idx_price_history_stock ON Stock_Price_History(stock_id, recorded_at);
+    CREATE INDEX idx_audit_timestamp ON Audit_Log(action_timestamp);
     """)
 
     # Populate Sample Data

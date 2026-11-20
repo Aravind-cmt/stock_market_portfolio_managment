@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Stock Market Portfolio Management System
 -- SQL Triggers Definition (MySQL 8.0+)
--- Ensures automated auditing, history tracking, and strict domain constraints.
+-- Ensures automated auditing, history tracking, and domain constraints.
 -- =============================================================================
 
 USE stock_portfolio_db;
@@ -10,8 +10,8 @@ DELIMITER $$
 
 -- -----------------------------------------------------------------------------
 -- 1. Trigger: trg_after_stock_price_update
--- Fires AFTER UPDATE on Stocks. If the current_price has changed,
--- automatically archives the previous price into Stock_Price_History.
+-- Fires AFTER UPDATE on Stocks. If current_price has changed,
+-- automatically archives the price into Stock_Price_History.
 -- -----------------------------------------------------------------------------
 DROP TRIGGER IF EXISTS trg_after_stock_price_update$$
 
@@ -27,7 +27,7 @@ END$$
 
 -- -----------------------------------------------------------------------------
 -- 2. Trigger: trg_prevent_negative_cash
--- Fires BEFORE UPDATE on Users. Enforces business rule: cash balance cannot be negative.
+-- Fires BEFORE UPDATE on Users. Enforces business constraint: cash balance >= 0.
 -- -----------------------------------------------------------------------------
 DROP TRIGGER IF EXISTS trg_prevent_negative_cash$$
 
@@ -43,7 +43,7 @@ END$$
 
 -- -----------------------------------------------------------------------------
 -- 3. Trigger: trg_prevent_negative_portfolio
--- Fires BEFORE UPDATE on Portfolio. Enforces business rule: shares owned cannot be negative.
+-- Fires BEFORE UPDATE on Portfolio. Enforces: total_quantity >= 0.
 -- -----------------------------------------------------------------------------
 DROP TRIGGER IF EXISTS trg_prevent_negative_portfolio$$
 
@@ -58,22 +58,31 @@ BEGIN
 END$$
 
 -- -----------------------------------------------------------------------------
--- 4. Trigger: trg_after_user_registration_audit
--- Fires AFTER INSERT on Users. Logs registration activity into Audit_Log.
+-- 4. Trigger: trg_after_user_registration
+-- Fires AFTER INSERT on Users. Automatically assigns the default 'USER' role
+-- and records a registration event into Audit_Log.
 -- -----------------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trg_after_user_registration_audit$$
+DROP TRIGGER IF EXISTS trg_after_user_registration$$
 
-CREATE TRIGGER trg_after_user_registration_audit
+CREATE TRIGGER trg_after_user_registration
 AFTER INSERT ON Users
 FOR EACH ROW
 BEGIN
-    INSERT INTO Audit_Log (user_id, action, table_name, record_id, description)
+    -- Assign default USER role (role_id = 3)
+    INSERT INTO User_Roles (user_id, role_id, assigned_by, assigned_at)
+    VALUES (NEW.user_id, 3, NULL, CURRENT_TIMESTAMP);
+
+    -- Log to Audit_Log
+    INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
     VALUES (
+        NEW.user_id,
         NEW.user_id,
         'USER_REGISTRATION',
         'Users',
         NEW.user_id,
-        CONCAT('New user registered: ', NEW.name, ' (', NEW.email, ') with starting cash ₹', NEW.cash_balance)
+        NULL,
+        CONCAT('Cash: ₹', NEW.cash_balance),
+        CONCAT('New user registered: ', NEW.name, ' (', NEW.email, ')')
     );
 END$$
 

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Stock Market Portfolio Management System
 -- Stored Procedures Definition (MySQL 8.0+)
--- Implements ACID compliant Buy/Sell transactions with row locking.
+-- Implements ACID compliant Buy/Sell transactions and Role Management.
 -- =============================================================================
 
 USE stock_portfolio_db;
@@ -134,9 +134,10 @@ proc_label: BEGIN
     END IF;
 
     -- 4. Record Audit Log
-    INSERT INTO Audit_Log (user_id, action, table_name, record_id, description)
+    INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
     VALUES (
-        p_user_id, 'BUY_ORDER', 'Transactions', v_tx_id, 
+        p_user_id, p_user_id, 'BUY_ORDER', 'Transactions', v_tx_id,
+        CONCAT('Cash: ₹', v_cash), CONCAT('Cash: ₹', v_cash - v_total_cost),
         CONCAT('Successfully bought ', p_quantity, ' shares at ₹', v_price, '. Total: ₹', v_total_cost)
     );
 
@@ -162,6 +163,7 @@ CREATE PROCEDURE sp_sell_stock(
     OUT p_realized_pnl DECIMAL(12, 2)
 )
 proc_label: BEGIN
+    DECLARE v_cash DECIMAL(15, 2);
     DECLARE v_price DECIMAL(12, 2);
     DECLARE v_total_revenue DECIMAL(15, 2);
     DECLARE v_account_status VARCHAR(20);
@@ -191,8 +193,8 @@ proc_label: BEGIN
     START TRANSACTION;
 
     -- Validate user
-    SELECT account_status INTO v_account_status
-    FROM Users WHERE user_id = p_user_id;
+    SELECT cash_balance, account_status INTO v_cash, v_account_status
+    FROM Users WHERE user_id = p_user_id FOR UPDATE;
 
     IF v_account_status IS NULL OR v_account_status <> 'ACTIVE' THEN
         ROLLBACK;
@@ -256,9 +258,10 @@ proc_label: BEGIN
     END IF;
 
     -- 4. Record Audit Log
-    INSERT INTO Audit_Log (user_id, action, table_name, record_id, description)
+    INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
     VALUES (
-        p_user_id, 'SELL_ORDER', 'Transactions', v_tx_id, 
+        p_user_id, p_user_id, 'SELL_ORDER', 'Transactions', v_tx_id,
+        CONCAT('Shares: ', v_existing_qty), CONCAT('Shares: ', v_existing_qty - p_quantity),
         CONCAT('Sold ', p_quantity, ' shares at ₹', v_price, '. Total proceeds: ₹', v_total_revenue, '. Realized P&L: ₹', p_realized_pnl)
     );
 
@@ -269,11 +272,12 @@ END$$
 
 -- -----------------------------------------------------------------------------
 -- 3. Procedure: sp_update_stock_price
--- Allows Admin to update a stock's price, calculating change & storing history.
+-- Allows Admin to update a stock price, recalculating day change and logging history.
 -- -----------------------------------------------------------------------------
 DROP PROCEDURE IF EXISTS sp_update_stock_price$$
 
 CREATE PROCEDURE sp_update_stock_price(
+    IN p_acting_user_id INT,
     IN p_stock_id INT,
     IN p_new_price DECIMAL(12, 2),
     OUT p_status VARCHAR(20),
@@ -312,9 +316,10 @@ proc_label: BEGIN
     INSERT INTO Stock_Price_History (stock_id, price, recorded_at)
     VALUES (p_stock_id, p_new_price, CURRENT_TIMESTAMP);
 
-    INSERT INTO Audit_Log (user_id, action, table_name, record_id, description)
+    INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
     VALUES (
-        NULL, 'PRICE_UPDATE', 'Stocks', p_stock_id,
+        p_acting_user_id, NULL, 'PRICE_UPDATE', 'Stocks', p_stock_id,
+        CONCAT('Price: ₹', v_old_price), CONCAT('Price: ₹', p_new_price),
         CONCAT('Price updated from ₹', v_old_price, ' to ₹', p_new_price, ' (', v_change_pct, '%)')
     );
 
@@ -323,39 +328,84 @@ proc_label: BEGIN
 END$$
 
 -- -----------------------------------------------------------------------------
--- 4. Procedure: sp_get_user_portfolio
--- Returns active holdings for a specific user.
+-- 4. Procedure: sp_assign_role
+-- Super Admin procedure to promote or demote user roles.
+-- Enforces: Cannot remove last active SUPER_ADMIN.
 -- -----------------------------------------------------------------------------
-DROP PROCEDURE IF EXISTS sp_get_user_portfolio$$
+DROP PROCEDURE IF EXISTS sp_assign_role$$
 
-CREATE PROCEDURE sp_get_user_portfolio(
-    IN p_user_id INT
+CREATE PROCEDURE sp_assign_role(
+    IN p_acting_user_id INT,
+    IN p_target_user_id INT,
+    IN p_new_role_name VARCHAR(50),
+    OUT p_status VARCHAR(20),
+    OUT p_message VARCHAR(255)
 )
-BEGIN
-    SELECT 
-        p.portfolio_id,
-        s.stock_id,
-        s.symbol,
-        s.company_name,
-        s.sector,
-        p.total_quantity,
-        p.average_buy_price,
-        s.current_price,
-        ROUND(p.total_quantity * p.average_buy_price, 2) AS total_investment,
-        ROUND(p.total_quantity * s.current_price, 2) AS current_value,
-        ROUND((p.total_quantity * s.current_price) - (p.total_quantity * p.average_buy_price), 2) AS profit_loss,
-        ROUND(
-            CASE 
-                WHEN p.average_buy_price > 0 THEN 
-                    (((s.current_price - p.average_buy_price) / p.average_buy_price) * 100)
-                ELSE 0.00 
-            END, 2
-        ) AS profit_loss_percent,
-        p.updated_at
-    FROM Portfolio p
-    JOIN Stocks s ON p.stock_id = s.stock_id
-    WHERE p.user_id = p_user_id AND p.total_quantity > 0
-    ORDER BY current_value DESC;
+proc_label: BEGIN
+    DECLARE v_actor_role VARCHAR(50);
+    DECLARE v_target_old_role VARCHAR(50);
+    DECLARE v_new_role_id INT;
+    DECLARE v_super_admin_count INT;
+
+    -- Verify actor is SUPER_ADMIN
+    SELECT r.role_name INTO v_actor_role
+    FROM User_Roles ur
+    JOIN Roles r ON ur.role_id = r.role_id
+    WHERE ur.user_id = p_acting_user_id
+    LIMIT 1;
+
+    IF v_actor_role <> 'SUPER_ADMIN' THEN
+        SET p_status = 'ERROR';
+        SET p_message = 'Unauthorized: Only SUPER_ADMIN can modify user roles.';
+        LEAVE proc_label;
+    END IF;
+
+    -- Verify new role exists
+    SELECT role_id INTO v_new_role_id
+    FROM Roles WHERE role_name = p_new_role_name;
+
+    IF v_new_role_id IS NULL THEN
+        SET p_status = 'ERROR';
+        SET p_message = 'Specified role does not exist.';
+        LEAVE proc_label;
+    END IF;
+
+    -- Get target old role
+    SELECT r.role_name INTO v_target_old_role
+    FROM User_Roles ur
+    JOIN Roles r ON ur.role_id = r.role_id
+    WHERE ur.user_id = p_target_user_id
+    LIMIT 1;
+
+    -- Prevent demoting last SUPER_ADMIN
+    IF v_target_old_role = 'SUPER_ADMIN' AND p_new_role_name <> 'SUPER_ADMIN' THEN
+        SELECT COUNT(*) INTO v_super_admin_count
+        FROM User_Roles ur
+        JOIN Roles r ON ur.role_id = r.role_id
+        WHERE r.role_name = 'SUPER_ADMIN';
+
+        IF v_super_admin_count <= 1 THEN
+            SET p_status = 'ERROR';
+            SET p_message = 'Cannot demote the last remaining active SUPER_ADMIN.';
+            LEAVE proc_label;
+        END IF;
+    END IF;
+
+    -- Update or Insert role
+    DELETE FROM User_Roles WHERE user_id = p_target_user_id;
+    INSERT INTO User_Roles (user_id, role_id, assigned_by, assigned_at)
+    VALUES (p_target_user_id, v_new_role_id, p_acting_user_id, CURRENT_TIMESTAMP);
+
+    -- Audit Log
+    INSERT INTO Audit_Log (acting_user_id, affected_user_id, action, table_name, record_id, previous_value, new_value, description)
+    VALUES (
+        p_acting_user_id, p_target_user_id, 'ROLE_CHANGE', 'User_Roles', p_target_user_id,
+        v_target_old_role, p_new_role_name,
+        CONCAT('Role changed from ', COALESCE(v_target_old_role, 'NONE'), ' to ', p_new_role_name)
+    );
+
+    SET p_status = 'SUCCESS';
+    SET p_message = CONCAT('User role successfully updated to ', p_new_role_name);
 END$$
 
 DELIMITER ;

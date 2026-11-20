@@ -1,7 +1,6 @@
-from services.db import execute_query, execute_update, TransactionScope, get_db_mode
-from datetime import datetime
+from services.db import execute_query, execute_update, TransactionScope
 
-def get_all_stocks(search=None, sector=None):
+def get_all_stocks(search=None, sector=None, sort_by=None):
     query = "SELECT * FROM Stocks WHERE 1=1"
     params = []
     if search:
@@ -10,7 +9,16 @@ def get_all_stocks(search=None, sector=None):
     if sector and sector != 'ALL':
         query += " AND sector = %s"
         params.append(sector)
-    query += " ORDER BY symbol ASC"
+        
+    if sort_by == 'price_desc':
+        query += " ORDER BY current_price DESC"
+    elif sort_by == 'price_asc':
+        query += " ORDER BY current_price ASC"
+    elif sort_by == 'change_desc':
+        query += " ORDER BY day_change_percent DESC"
+    else:
+        query += " ORDER BY symbol ASC"
+        
     return execute_query(query, params, fetch='all')
 
 def get_stock_by_id(stock_id):
@@ -26,7 +34,7 @@ def get_sectors():
     rows = execute_query(query, fetch='all')
     return [r['sector'] for r in rows if r['sector']]
 
-def get_stock_price_history(stock_id, limit=15):
+def get_stock_price_history(stock_id, limit=20):
     query = """
     SELECT price, recorded_at 
     FROM Stock_Price_History 
@@ -48,7 +56,7 @@ def get_market_summary():
         'losers': losers
     }
 
-def add_stock(symbol, company_name, sector, current_price, high_52w=None, low_52w=None):
+def add_stock(symbol, company_name, sector, current_price, high_52w=None, low_52w=None, acting_user_id=None):
     symbol = symbol.strip().upper()
     current_price = float(current_price)
     high_52w = float(high_52w) if high_52w else current_price * 1.15
@@ -69,12 +77,12 @@ def add_stock(symbol, company_name, sector, current_price, high_52w=None, low_52
         )
         # Log to audit
         tx.execute(
-            "INSERT INTO Audit_Log (user_id, action, table_name, record_id, description) VALUES (%s, %s, %s, %s, %s)",
-            (None, 'ADD_STOCK', 'Stocks', stock_id, f"Added new stock {symbol} at ₹{current_price}")
+            "INSERT INTO Audit_Log (acting_user_id, action, table_name, record_id, new_value, description) VALUES (%s, %s, %s, %s, %s, %s)",
+            (acting_user_id, 'ADD_STOCK', 'Stocks', stock_id, f"Price: ₹{current_price}", f"Added new stock {symbol} ({company_name}) at ₹{current_price}")
         )
         return stock_id
 
-def update_stock(stock_id, company_name, sector, high_52w, low_52w):
+def update_stock(stock_id, company_name, sector, high_52w, low_52w, acting_user_id=None):
     query = """
     UPDATE Stocks 
     SET company_name = %s, sector = %s, high_52w = %s, low_52w = %s, updated_at = CURRENT_TIMESTAMP
@@ -82,11 +90,11 @@ def update_stock(stock_id, company_name, sector, high_52w, low_52w):
     """
     execute_update(query, (company_name, sector, high_52w, low_52w, stock_id))
     execute_update(
-        "INSERT INTO Audit_Log (user_id, action, table_name, record_id, description) VALUES (%s, %s, %s, %s, %s)",
-        (None, 'UPDATE_STOCK', 'Stocks', stock_id, f"Updated stock info for stock_id {stock_id}")
+        "INSERT INTO Audit_Log (acting_user_id, action, table_name, record_id, description) VALUES (%s, %s, %s, %s, %s)",
+        (acting_user_id, 'UPDATE_STOCK', 'Stocks', stock_id, f"Updated stock info for stock_id {stock_id}")
     )
 
-def update_stock_price(stock_id, new_price):
+def update_stock_price(stock_id, new_price, acting_user_id=None):
     new_price = float(new_price)
     with TransactionScope() as tx:
         stock = tx.execute("SELECT * FROM Stocks WHERE stock_id = %s", (stock_id,)).fetchone()
@@ -105,15 +113,14 @@ def update_stock_price(stock_id, new_price):
         tx.execute("INSERT INTO Stock_Price_History (stock_id, price) VALUES (%s, %s)", (stock_id, new_price))
         
         tx.execute(
-            "INSERT INTO Audit_Log (user_id, action, table_name, record_id, description) VALUES (%s, %s, %s, %s, %s)",
-            (None, 'PRICE_UPDATE', 'Stocks', stock_id, f"Price updated from ₹{old_price} to ₹{new_price} ({change_pct}%)")
+            "INSERT INTO Audit_Log (acting_user_id, action, table_name, record_id, previous_value, new_value, description) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            (acting_user_id, 'PRICE_UPDATE', 'Stocks', stock_id, f"₹{old_price}", f"₹{new_price}", f"Price updated from ₹{old_price} to ₹{new_price} ({change_pct}%)")
         )
 
-def delete_stock(stock_id):
-    # Ensure stock is not in any active portfolio
+def delete_stock(stock_id, acting_user_id=None):
     holdings = execute_query("SELECT SUM(total_quantity) as total FROM Portfolio WHERE stock_id = %s", (stock_id,), fetch='one')
     if holdings and holdings.get('total') and holdings['total'] > 0:
-        raise ValueError("Cannot delete stock that is currently held in user portfolios.")
+        raise ValueError("Cannot delete stock that is currently held in investor portfolios.")
     
     with TransactionScope() as tx:
         stock = tx.execute("SELECT symbol FROM Stocks WHERE stock_id = %s", (stock_id,)).fetchone()
@@ -122,6 +129,6 @@ def delete_stock(stock_id):
         tx.execute("DELETE FROM Stock_Price_History WHERE stock_id = %s", (stock_id,))
         tx.execute("DELETE FROM Stocks WHERE stock_id = %s", (stock_id,))
         tx.execute(
-            "INSERT INTO Audit_Log (user_id, action, table_name, record_id, description) VALUES (%s, %s, %s, %s, %s)",
-            (None, 'DELETE_STOCK', 'Stocks', stock_id, f"Deleted stock {symbol}")
+            "INSERT INTO Audit_Log (acting_user_id, action, table_name, record_id, description) VALUES (%s, %s, %s, %s, %s)",
+            (acting_user_id, 'DELETE_STOCK', 'Stocks', stock_id, f"Deleted stock {symbol}")
         )
