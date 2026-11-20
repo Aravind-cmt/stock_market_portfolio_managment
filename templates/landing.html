@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}StockPulse - Professional Stock Market Portfolio Management System{% endblock %}
+{% block page_title %}Welcome to StockPulse{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="card-custom p-5 mb-5 text-center position-relative overflow-hidden" style="background: radial-gradient(circle at 50% 0%, rgba(58, 134, 255, 0.25) 0%, rgba(15, 23, 42, 0.95) 75%);">
+        <span class="badge bg-primary text-uppercase px-3 py-2 mb-3 rounded-pill">DBMS Laboratory Final Capstone Project</span>
+        <h1 class="display-4 fw-bold text-white mb-3">
+            Institutional-Grade <span style="background: linear-gradient(90deg, #3a86ff, #00b4d8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Stock Portfolio</span> Management
+        </h1>
+        <p class="lead text-secondary mx-auto mb-4" style="max-width: 750px;">
+            A responsive, database-driven financial portfolio tracking and paper-trading platform engineered on 
+            <strong>Python Flask</strong> and <strong>MySQL 8.0+</strong> with ACID transaction safety, stored procedures, triggers, and live relational analytics.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4 shadow">
+                <i class="bi bi-person-plus me-2"></i> Register Free & Get ₹1,00,000 Paper Cash
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-box-arrow-in-right me-2"></i> User Login
+            </a>
+            <a href="{{ url_for('market.index') }}" class="btn btn-outline-info btn-lg px-4">
+                <i class="bi bi-shop me-2"></i> Explore Market
+            </a>
+            <a href="{{ url_for('admin.login') }}" class="btn btn-outline-warning btn-lg px-3" title="Admin Portal">
+                <i class="bi bi-shield-lock me-1"></i> Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- Pre-Loaded Demo Credentials Card -->
+    <div class="card-custom p-4 mb-5 border border-primary border-opacity-50">
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <h5 class="fw-bold text-info mb-1"><i class="bi bi-key-fill me-2"></i>Demo Accounts</h5>
+                <small class="text-secondary">Ready to test instantly out of the box</small>
+            </div>
+            <div class="col-md-4">
+                <div class="p-2 bg-dark rounded border border-secondary small">
+                    <strong class="text-white">Investor Demo:</strong><br>
+                    Email: <code class="text-warning">aravind@gmail.com</code><br>
+                    Password: <code class="text-warning">Password@123</code>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-2 bg-dark rounded border border-secondary small">
+                    <strong class="text-white">Admin Demo:</strong><br>
+                    Email: <code class="text-warning">admin@stockpulse.com</code><br>
+                    Password: <code class="text-warning">Admin@123</code>
+                </div>
+            </div>
+            <div class="col-md-1 text-center">
+                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Features Grid -->
+    <h3 class="fw-bold text-white mb-4"><i class="bi bi-stars text-primary me-2"></i>Core Architecture & Capabilities</h3>
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card-custom h-100 p-4">
+                <div class="stat-icon bg-primary bg-opacity-25 text-primary mb-3">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <h5 class="fw-bold text-white">ACID Transactions & Row Locking</h5>
+                <p class="text-secondary small">
+                    Order execution operates under strict MySQL InnoDB ACID transactions using <code>START TRANSACTION</code>, <code>SELECT ... FOR UPDATE</code> row locks, and automated <code>COMMIT / ROLLBACK</code>.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom h-100 p-4">
+                <div class="stat-icon bg-success bg-opacity-25 text-success mb-3">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <h5 class="fw-bold text-white">Simulated Paper Wallet</h5>
+                <p class="text-secondary small">
+                    Every user receives ₹1,00,000 in paper trading balance to practice buying and selling without risking capital, validated with DB check constraints.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom h-100 p-4">
+                <div class="stat-icon bg-info bg-opacity-25 text-info mb-3">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <h5 class="fw-bold text-white">3NF Normalized Relational Schema</h5>
+                <p class="text-secondary small">
+                    Engineered across 9 tables adhering strictly to 1NF, 2NF, and 3NF, eliminating partial dependencies and update anomalies.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom h-100 p-4">
+                <div class="stat-icon bg-warning bg-opacity-25 text-warning mb-3">
+                    <i class="bi bi-pie-chart"></i>
+                </div>
+                <h5 class="fw-bold text-white">Visual Analytics & Chart.js</h5>
+                <p class="text-secondary small">
+                    Dynamic sector and asset allocation donut charts, along with responsive historical stock price lines and trend indicators.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom h-100 p-4">
+                <div class="stat-icon bg-danger bg-opacity-25 text-danger mb-3">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <h5 class="fw-bold text-white">Automated Triggers & Audits</h5>
+                <p class="text-secondary small">
+                    Every trade and administrative action is preserved into the <code>Audit_Log</code> table, with triggers ensuring non-negative balances.
+                </p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card-custom h-100 p-4">
+                <div class="stat-icon bg-secondary bg-opacity-25 text-white mb-3">
+                    <i class="bi bi-file-earmark-arrow-down"></i>
+                </div>
+                <h5 class="fw-bold text-white">CSV & Printable Reports</h5>
+                <p class="text-secondary small">
+                    Instant one-click exports for Complete Transactions, Buys, Sells, Holdings, and Profit/Loss reports with print media support.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack Row -->
+    <div class="card-custom p-4">
+        <h5 class="fw-bold text-white mb-3"><i class="bi bi-layers text-info me-2"></i>Technology Implementation</h5>
+        <div class="row text-center g-3">
+            <div class="col-6 col-md-2">
+                <div class="p-3 bg-dark rounded border border-secondary">
+                    <i class="bi bi-filetype-py fs-2 text-warning d-block mb-1"></i>
+                    <strong>Python Flask</strong>
+                    <small class="d-block text-secondary">Backend Framework</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3 bg-dark rounded border border-secondary">
+                    <i class="bi bi-database-fill fs-2 text-info d-block mb-1"></i>
+                    <strong>MySQL 8.0+</strong>
+                    <small class="d-block text-secondary">Relational Engine</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3 bg-dark rounded border border-secondary">
+                    <i class="bi bi-bootstrap-fill fs-2 text-primary d-block mb-1"></i>
+                    <strong>Bootstrap 5</strong>
+                    <small class="d-block text-secondary">Responsive UI</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3 bg-dark rounded border border-secondary">
+                    <i class="bi bi-graph-up fs-2 text-success d-block mb-1"></i>
+                    <strong>Chart.js</strong>
+                    <small class="d-block text-secondary">Data Visualization</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3 bg-dark rounded border border-secondary">
+                    <i class="bi bi-shield-lock-fill fs-2 text-danger d-block mb-1"></i>
+                    <strong>Werkzeug</strong>
+                    <small class="d-block text-secondary">Scrypt Hashing</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-2">
+                <div class="p-3 bg-dark rounded border border-secondary">
+                    <i class="bi bi-file-earmark-spreadsheet fs-2 text-success d-block mb-1"></i>
+                    <strong>CSV & Print</strong>
+                    <small class="d-block text-secondary">Report Engine</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics - StockPulse{% endblock %}
+{% block page_title %}Reports & Export Center{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold text-white mb-1"><i class="bi bi-file-earmark-bar-graph text-primary me-2"></i>Financial Reports</h3>
+            <p class="text-secondary small mb-0">Generate, filter, and export comprehensive investment reports</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('reports.export_csv', type=report_type, start_date=start_date, end_date=end_date) }}" class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download CSV
+            </a>
+            <a href="{{ url_for('reports.printable', type=report_type, start_date=start_date, end_date=end_date) }}" target="_blank" class="btn btn-outline-light btn-sm">
+                <i class="bi bi-printer me-1"></i> Print Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Report Type Selector Tabs -->
+    <div class="card-custom p-3 mb-4">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label text-secondary small mb-1">Report Type</label>
+                <div class="d-flex flex-wrap gap-2">
+                    {% set types = [
+                        ('all_transactions', 'All Transactions', 'bi-receipt'),
+                        ('buy_transactions', 'Buy Orders', 'bi-bag-plus'),
+                        ('sell_transactions', 'Sell Orders', 'bi-cash'),
+                        ('portfolio_holdings', 'Portfolio Holdings', 'bi-briefcase'),
+                        ('profit_loss', 'Profit & Loss', 'bi-graph-up-arrow')
+                    ] %}
+                    {% for rtype, label, icon in types %}
+                    <a href="{{ url_for('reports.index', type=rtype) }}" 
+                       class="btn btn-sm {% if report_type == rtype %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="bi {{ icon }} me-1"></i> {{ label }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <form method="GET" action="{{ url_for('reports.index') }}" class="row g-2">
+                    <input type="hidden" name="type" value="{{ report_type }}">
+                    <div class="col-5">
+                        <label class="form-label text-secondary small mb-1">From Date</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date or '' }}">
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label text-secondary small mb-1">To Date</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date or '' }}">
+                    </div>
+                    <div class="col-2 d-grid align-self-end">
+                        <button type="submit" class="btn btn-primary btn-sm">Go</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Title & Summary Stats -->
+    <div class="card-custom p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h4 class="fw-bold text-white mb-1">{{ report.title }}</h4>
+                <p class="text-secondary small mb-0">
+                    <strong class="text-white">{{ report.count }}</strong> record(s) found
+                    {% if start_date %} from {{ start_date }}{% endif %}
+                    {% if end_date %} to {{ end_date }}{% endif %}
+                </p>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2 text-center">
+                    <div class="col-4">
+                        <small class="text-secondary d-block">Portfolio Value</small>
+                        <strong class="text-white">₹{{ "{:,.0f}".format(report.summary.total_current_value) }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-secondary d-block">Total Invested</small>
+                        <strong class="text-white">₹{{ "{:,.0f}".format(report.summary.total_invested) }}</strong>
+                    </div>
+                    <div class="col-4">
+                        <small class="text-secondary d-block">Overall P&L</small>
+                        <strong class="{% if report.summary.total_pnl >= 0 %}profit-text{% else %}loss-text{% endif %}">
+                            {% if report.summary.total_pnl >= 0 %}+{% endif %}₹{{ "{:,.0f}".format(report.summary.total_pnl) }}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Data Table -->
+    <div class="card-custom p-0 overflow-hidden">
+        {% if report.records %}
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                {% if report_type in ['all_transactions', 'buy_transactions', 'sell_transactions'] %}
+                <thead>
+                    <tr>
+                        <th>Tx ID</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Stock</th>
+                        <th>Company</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Price (₹)</th>
+                        <th>Total Amount (₹)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in report.records %}
+                    <tr>
+                        <td class="text-secondary">#{{ r.transaction_id }}</td>
+                        <td>{{ r.transaction_date }}</td>
+                        <td><small class="text-secondary">{{ r.transaction_time }}</small></td>
+                        <td><strong class="text-white">{{ r.symbol }}</strong></td>
+                        <td><small class="text-secondary">{{ r.company_name }}</small></td>
+                        <td>
+                            <span class="badge {% if r.transaction_type == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ r.transaction_type }}
+                            </span>
+                        </td>
+                        <td>{{ r.quantity }}</td>
+                        <td>₹{{ "{:,.2f}".format(r.price) }}</td>
+                        <td class="fw-bold text-white">₹{{ "{:,.2f}".format(r.total_amount) }}</td>
+                        <td><span class="badge bg-secondary text-success">{{ r.transaction_status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+                {% elif report_type in ['portfolio_holdings', 'profit_loss'] %}
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Company</th>
+                        <th>Sector</th>
+                        <th>Quantity</th>
+                        <th>Avg Buy Price</th>
+                        <th>Current Price</th>
+                        <th>Investment (₹)</th>
+                        <th>Market Value (₹)</th>
+                        <th>Profit / Loss (₹)</th>
+                        <th>Return (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in report.records %}
+                    <tr>
+                        <td><strong class="text-white">{{ r.symbol }}</strong></td>
+                        <td><small class="text-secondary">{{ r.company_name }}</small></td>
+                        <td><span class="badge bg-secondary bg-opacity-25 text-info border border-secondary">{{ r.sector }}</span></td>
+                        <td>{{ r.total_quantity }}</td>
+                        <td>₹{{ "{:,.2f}".format(r.average_buy_price) }}</td>
+                        <td>₹{{ "{:,.2f}".format(r.current_price) }}</td>
+                        <td>₹{{ "{:,.2f}".format(r.total_investment) }}</td>
+                        <td class="fw-bold text-white">₹{{ "{:,.2f}".format(r.current_value) }}</td>
+                        <td>
+                            <span class="{% if r.profit_loss >= 0 %}profit-text{% else %}loss-text{% endif %} fw-semibold">
+                                {% if r.profit_loss >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(r.profit_loss) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="{% if r.profit_loss_percent >= 0 %}profit-badge{% else %}loss-badge{% endif %}">
+                                {{ r.profit_loss_percent }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% endif %}
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-secondary">
+            <i class="bi bi-file-earmark-x fs-1 d-block mb-3 text-muted"></i>
+            <h5>No records found</h5>
+            <p class="small">Try adjusting the date range or report type.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

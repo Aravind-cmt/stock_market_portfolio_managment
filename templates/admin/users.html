@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Admin Panel{% endblock %}
+{% block page_title %}Investor Account Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-white mb-1"><i class="bi bi-people text-info me-2"></i>Registered Investors ({{ users|length }})</h3>
+            <p class="text-secondary small mb-0">View all registered user accounts, their portfolio holdings, and trading activity.</p>
+        </div>
+    </div>
+
+    <div class="card-custom p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name & Contact</th>
+                        <th>Cash Balance</th>
+                        <th>Stocks Held</th>
+                        <th>Total Invested</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="text-secondary">{{ u.user_id }}</td>
+                        <td>
+                            <strong class="text-white d-block">{{ u.name }}</strong>
+                            <small class="text-secondary">{{ u.email }}</small><br>
+                            <small class="text-muted">{{ u.phone }}</small>
+                        </td>
+                        <td class="fw-bold text-warning">₹{{ "{:,.2f}".format(u.cash_balance) }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary rounded-pill">{{ u.stocks_held }}</span>
+                        </td>
+                        <td>₹{{ "{:,.2f}".format(u.total_invested) }}</td>
+                        <td>
+                            <span class="badge {% if u.account_status == 'ACTIVE' %}bg-success{% elif u.account_status == 'SUSPENDED' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ u.account_status }}
+                            </span>
+                        </td>
+                        <td><small class="text-secondary">{{ str(u.created_at)[:10] }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

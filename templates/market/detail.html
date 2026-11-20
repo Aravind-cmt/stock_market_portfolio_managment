@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{{ stock.symbol }} - Stock Analysis & Chart{% endblock %}
+{% block page_title %}{{ stock.symbol }} — {{ stock.company_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Back to Market & Quick Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ url_for('market.index') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Market Registry
+        </a>
+        {% if session.get('user_id') %}
+        <button class="btn btn-outline-warning btn-sm btn-watchlist-toggle" data-stock-id="{{ stock.stock_id }}">
+            <i class="bi {% if in_watchlist %}bi-star-fill text-warning{% else %}bi-star{% endif %} me-1"></i>
+            {% if in_watchlist %}In Watchlist{% else %}Add to Watchlist{% endif %}
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Stock Header Card -->
+    <div class="card-custom p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-7">
+                <span class="badge bg-secondary bg-opacity-25 text-info border border-secondary mb-2">{{ stock.sector }}</span>
+                <h2 class="fw-bold text-white mb-1">{{ stock.company_name }} ({{ stock.symbol }})</h2>
+                <small class="text-secondary">National Stock Exchange (NSE) / Bombay Stock Exchange (BSE)</small>
+            </div>
+            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                <small class="text-secondary d-block">Current Market Price</small>
+                <h1 class="fw-bold text-white mb-1">₹{{ "{:,.2f}".format(stock.current_price) }}</h1>
+                <span class="{% if stock.day_change >= 0 %}profit-badge{% else %}loss-badge{% endif %} fs-6">
+                    {% if stock.day_change >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(stock.day_change) }}
+                    ({{ stock.day_change_percent }}%)
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart & Order Execution Grid -->
+    <div class="row g-4">
+        <!-- Technical Line Chart -->
+        <div class="col-lg-8">
+            <div class="card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-white mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Price Trend & History</h5>
+                    <span class="badge bg-dark border border-secondary text-secondary">Historical Daily Ticks</span>
+                </div>
+                <div style="height: 340px; position: relative;">
+                    <canvas id="stockHistoryCanvas"></canvas>
+                </div>
+
+                <div class="row g-3 mt-3 pt-3 border-top border-secondary text-center">
+                    <div class="col-3">
+                        <small class="text-secondary d-block">52-Week High</small>
+                        <strong class="text-white">₹{{ "{:,.2f}".format(stock.high_52w) }}</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-secondary d-block">52-Week Low</small>
+                        <strong class="text-white">₹{{ "{:,.2f}".format(stock.low_52w) }}</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-secondary d-block">Trading Volume</small>
+                        <strong class="text-white">{{ "{:,}".format(stock.volume) }}</strong>
+                    </div>
+                    <div class="col-3">
+                        <small class="text-secondary d-block">Your Holdings</small>
+                        <strong class="text-info">{{ owned_quantity }} shares</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buy / Sell Order Execution Panel -->
+        <div class="col-lg-4">
+            <div class="card-custom p-4 h-100">
+                <h5 class="fw-bold text-white mb-3"><i class="bi bi-arrow-left-right text-success me-2"></i>Execute Order</h5>
+
+                {% if session.get('user_id') %}
+                <!-- Tabs for Buy / Sell -->
+                <ul class="nav nav-pills nav-fill mb-3" id="orderTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active bg-success text-white" id="buy-tab" data-bs-toggle="tab" data-bs-target="#buy-panel" type="button">BUY</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link text-white" id="sell-tab" data-bs-toggle="tab" data-bs-target="#sell-panel" type="button">SELL</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="orderTabContent">
+                    <!-- BUY PANEL -->
+                    <div class="tab-pane fade show active" id="buy-panel">
+                        <form method="POST" action="{{ url_for('trade.buy') }}">
+                            <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small">Order Price</label>
+                                <input type="text" class="form-control" value="₹{{ stock.current_price }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small">Quantity to Buy</label>
+                                <input type="number" name="quantity" id="buyQty" class="form-control" value="1" min="1" required>
+                            </div>
+                            <div class="p-3 bg-dark rounded border border-secondary mb-3 small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-secondary">Estimated Total:</span>
+                                    <strong class="text-white" id="buyTotal">₹{{ stock.current_price }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">Available Cash:</span>
+                                    <span class="text-success">₹{{ "{:,.2f}".format(cash_balance) }}</span>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 py-2 fw-bold">
+                                <i class="bi bi-check-circle me-1"></i> Execute Buy Order
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- SELL PANEL -->
+                    <div class="tab-pane fade" id="sell-panel">
+                        <form method="POST" action="{{ url_for('trade.sell') }}">
+                            <input type="hidden" name="stock_id" value="{{ stock.stock_id }}">
+                            <div class="mb-3">
+                                <label class="form-label text-secondary small">Order Price</label>
+                                <input type="text" class="form-control" value="₹{{ stock.current_price }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <label class="form-label text-secondary small">Quantity to Sell</label>
+                                    <span class="small text-info">Owned: {{ owned_quantity }}</span>
+                                </div>
+                                <input type="number" name="quantity" id="sellQty" class="form-control" value="1" min="1" max="{{ owned_quantity }}" {% if owned_quantity == 0 %}disabled{% endif %} required>
+                            </div>
+                            <div class="p-3 bg-dark rounded border border-secondary mb-3 small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-secondary">Estimated Proceeds:</span>
+                                    <strong class="text-white" id="sellTotal">₹{{ stock.current_price }}</strong>
+                                </div>
+                            </div>
+                            {% if owned_quantity > 0 %}
+                            <button type="submit" class="btn btn-danger w-100 py-2 fw-bold">
+                                <i class="bi bi-cash me-1"></i> Execute Sell Order
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-secondary w-100 py-2" disabled>You do not own this stock</button>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <p class="text-secondary mb-3">Please sign in to buy and sell {{ stock.symbol }}.</p>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Login to Trade</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const history = {{ history | tojson | safe }};
+    const labels = history.map(h => (h.recorded_at ? h.recorded_at.substring(5, 16) : ''));
+    const prices = history.map(h => parseFloat(h.price));
+    initStockHistoryChart('stockHistoryCanvas', labels, prices, "{{ stock.symbol }}");
+
+    // Live order calculator
+    const stockPrice = {{ stock.current_price }};
+    const buyQty = document.getElementById('buyQty');
+    const buyTotal = document.getElementById('buyTotal');
+    const sellQty = document.getElementById('sellQty');
+    const sellTotal = document.getElementById('sellTotal');
+
+    if (buyQty && buyTotal) {
+        buyQty.addEventListener('input', function () {
+            const qty = parseInt(buyQty.value, 10) || 0;
+            buyTotal.textContent = '₹' + (qty * stockPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        });
+    }
+
+    if (sellQty && sellTotal) {
+        sellQty.addEventListener('input', function () {
+            const qty = parseInt(sellQty.value, 10) || 0;
+            sellTotal.textContent = '₹' + (qty * stockPrice).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        });
+    }
+});
+</script>
+{% endblock %}

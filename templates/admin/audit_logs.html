@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs - Admin Panel{% endblock %}
+{% block page_title %}System Audit Log{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="mb-4">
+        <h3 class="fw-bold text-white mb-1"><i class="bi bi-journal-text text-info me-2"></i>System Audit Trail ({{ logs|length }} Recent Events)</h3>
+        <p class="text-secondary small mb-0">Automated database trigger and application event log — ordered by most recent activity.</p>
+    </div>
+
+    <div class="card-custom p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th>Log ID</th>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Target Table</th>
+                        <th>Record ID</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="text-secondary">{{ log.log_id }}</td>
+                        <td><small class="text-white">{{ str(log.action_timestamp)[:19] }}</small></td>
+                        <td>
+                            {% if log.user_name %}
+                            <strong class="text-white d-block">{{ log.user_name }}</strong>
+                            <small class="text-secondary">{{ log.user_email }}</small>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">SYSTEM</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set action_colors = {
+                                'BUY_ORDER': 'bg-success',
+                                'SELL_ORDER': 'bg-danger',
+                                'USER_REGISTER': 'bg-primary',
+                                'USER_LOGIN': 'bg-info text-dark',
+                                'USER_LOGOUT': 'bg-secondary',
+                                'PRICE_UPDATE': 'bg-warning text-dark',
+                                'ADMIN_LOGIN': 'bg-warning text-dark',
+                                'ADD_STOCK': 'bg-primary',
+                                'DELETE_STOCK': 'bg-danger',
+                                'PASSWORD_CHANGE': 'bg-info text-dark'
+                            } %}
+                            <span class="badge {{ action_colors.get(log.action, 'bg-secondary') }}">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td><code class="text-info">{{ log.table_name }}</code></td>
+                        <td class="text-secondary">{{ log.record_id or '—' }}</td>
+                        <td>
+                            <small class="text-secondary">{{ (log.description or '')[:80] }}{% if (log.description or '')|length > 80 %}...{% endif %}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,360 @@
+/* ==========================================================================
+   StockPulse - Stock Market Portfolio Management System
+   Color Palette: Deep Navy (#0b132b, #1c2541), Cyan Accent (#48cae4),
+   Profit Green (#10b981), Loss Red (#ef4444), Clean White (#ffffff)
+   ========================================================================== */
+
+:root {
+  --primary-navy: #0b132b;
+  --secondary-navy: #1c2541;
+  --accent-blue: #3a86ff;
+  --accent-cyan: #00b4d8;
+  --profit-green: #10b981;
+  --profit-bg: rgba(16, 185, 129, 0.12);
+  --loss-red: #ef4444;
+  --loss-bg: rgba(239, 68, 68, 0.12);
+  --bg-dark: #0f172a;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --sidebar-width: 260px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Layout Structure: Sidebar & Main Content
+   -------------------------------------------------------------------------- */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background: linear-gradient(180deg, var(--primary-navy) 0%, var(--secondary-navy) 100%);
+  border-right: 1px solid var(--card-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.sidebar-brand {
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+  text-decoration: none;
+  color: #fff;
+}
+
+.sidebar-brand i {
+  font-size: 1.6rem;
+  color: var(--accent-cyan);
+}
+
+.sidebar-brand span {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.sidebar-menu {
+  padding: 1rem 0.75rem;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.menu-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  padding: 0.75rem 0.75rem 0.25rem;
+  font-weight: 600;
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.nav-link i {
+  font-size: 1.15rem;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-link:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.nav-link.active {
+  color: #ffffff;
+  background: linear-gradient(90deg, #3a86ff 0%, #00b4d8 100%);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(58, 134, 255, 0.3);
+}
+
+.main-content {
+  margin-left: var(--sidebar-width);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+}
+
+/* --------------------------------------------------------------------------
+   Top Navbar
+   -------------------------------------------------------------------------- */
+.topbar {
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--card-border);
+  padding: 0.85rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+.wallet-badge {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--profit-green);
+  border-radius: 30px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Cards and Tables
+   -------------------------------------------------------------------------- */
+.card-custom {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-custom:hover {
+  border-color: rgba(58, 134, 255, 0.4);
+}
+
+.stat-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.profit-text {
+  color: var(--profit-green) !important;
+}
+
+.loss-text {
+  color: var(--loss-red) !important;
+}
+
+.profit-badge {
+  background-color: var(--profit-bg);
+  color: var(--profit-green);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.loss-badge {
+  background-color: var(--loss-bg);
+  color: var(--loss-red);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Table styling */
+.table-custom {
+  color: var(--text-primary);
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table-custom thead th {
+  background-color: #0b132b;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--card-border);
+  padding: 0.9rem 1rem;
+}
+
+.table-custom tbody td {
+  border-bottom: 1px solid var(--card-border);
+  padding: 1rem;
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+.table-custom tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* --------------------------------------------------------------------------
+   Forms & Controls
+   -------------------------------------------------------------------------- */
+.form-control, .form-select {
+  background-color: #0f172a;
+  border: 1px solid var(--card-border);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: #0f172a;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.25);
+  color: #fff;
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(90deg, #3a86ff 0%, #00b4d8 100%);
+  border: none;
+  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(58, 134, 255, 0.25);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(90deg, #2f72dc 0%, #0096c7 100%);
+  box-shadow: 0 6px 16px rgba(58, 134, 255, 0.4);
+}
+
+.btn-success {
+  background-color: var(--profit-green);
+  border: none;
+  font-weight: 600;
+}
+
+.btn-danger {
+  background-color: var(--loss-red);
+  border: none;
+  font-weight: 600;
+}
+
+/* Modal styling */
+.modal-content {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  border-radius: 14px;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--card-border);
+}
+
+.modal-footer {
+  border-top: 1px solid var(--card-border);
+}
+
+/* --------------------------------------------------------------------------
+   Print media styles for Reports
+   -------------------------------------------------------------------------- */
+@media print {
+  .sidebar, .topbar, .btn, .no-print {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .card-custom {
+    background: #ffffff !important;
+    border: 1px solid #ddd !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+  }
+  .table-custom thead th {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+  }
+  .table-custom tbody td {
+    color: #000000 !important;
+    border-color: #ddd !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Layout
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  .main-content {
+    margin-left: 0;
+  }
+}

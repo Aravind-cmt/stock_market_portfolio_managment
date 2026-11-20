@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Market - Indian Equities Registry{% endblock %}
+{% block page_title %}Indian Stock Market{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <!-- Notice Banner -->
+    <div class="alert alert-info py-2 px-3 d-flex align-items-center justify-content-between mb-4 small" style="background-color: rgba(58, 134, 255, 0.12); border-color: rgba(58, 134, 255, 0.3); color: #93c5fd;">
+        <span><i class="bi bi-info-circle-fill me-2"></i><strong>Demonstration Data:</strong> Stock market prices shown are realistic demonstration quotes for this DBMS academic project.</span>
+        {% if session.get('user_id') %}
+        <span class="text-white">Your Wallet: <strong>₹{{ "{:,.2f}".format(cash_balance) }}</strong></span>
+        {% endif %}
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card-custom p-3 mb-4">
+        <form method="GET" action="{{ url_for('market.index') }}" class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search by Symbol (e.g. RELIANCE, TCS) or Company..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select name="sector" class="form-select" onchange="this.form.submit()">
+                    <option value="ALL" {% if selected_sector == 'ALL' %}selected{% endif %}>All Sectors (All Listed Equities)</option>
+                    {% for sec in sectors %}
+                    <option value="{{ sec }}" {% if selected_sector == sec %}selected{% endif %}>{{ sec }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-filter me-1"></i> Filter</button>
+                {% if search or (selected_sector and selected_sector != 'ALL') %}
+                <a href="{{ url_for('market.index') }}" class="btn btn-outline-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Stock Market Table -->
+    <div class="card-custom p-0 overflow-hidden">
+        <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold text-white mb-0">Listed Equities ({{ stocks|length }} Stocks)</h5>
+            <small class="text-secondary">Click stock ticker for detailed price chart</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-custom mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Watch</th>
+                        <th>Symbol & Company</th>
+                        <th>Sector</th>
+                        <th>Current Price</th>
+                        <th>Day Change</th>
+                        <th>52W Range</th>
+                        <th>Volume</th>
+                        <th class="text-end" style="min-width: 140px;">Quick Trade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stock in stocks %}
+                    <tr>
+                        <td class="text-center">
+                            {% if session.get('user_id') %}
+                            <button class="btn btn-link p-0 text-decoration-none btn-watchlist-toggle"
+                                    data-stock-id="{{ stock.stock_id }}"
+                                    title="{% if stock.stock_id in watchlist_stock_ids %}Remove from Watchlist{% else %}Add to Watchlist{% endif %}">
+                                <i class="bi {% if stock.stock_id in watchlist_stock_ids %}bi-star-fill text-warning{% else %}bi-star text-secondary{% endif %} fs-5"></i>
+                            </button>
+                            {% else %}
+                            <a href="{{ url_for('auth.login') }}" class="text-secondary"><i class="bi bi-star"></i></a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('market.detail', stock_id=stock.stock_id) }}" class="text-white fw-bold text-decoration-none d-block">
+                                {{ stock.symbol }}
+                            </a>
+                            <small class="text-secondary">{{ stock.company_name }}</small>
+                        </td>
+                        <td><span class="badge bg-secondary bg-opacity-25 text-info border border-secondary">{{ stock.sector }}</span></td>
+                        <td>
+                            <span class="fs-6 fw-bold text-white">₹{{ "{:,.2f}".format(stock.current_price) }}</span>
+                        </td>
+                        <td>
+                            <span class="{% if stock.day_change >= 0 %}profit-badge{% else %}loss-badge{% endif %}">
+                                {% if stock.day_change >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(stock.day_change) }}
+                                ({{ stock.day_change_percent }}%)
+                            </span>
+                        </td>
+                        <td>
+                            <small class="text-secondary d-block">L: ₹{{ "{:,.2f}".format(stock.low_52w) }}</small>
+                            <small class="text-secondary d-block">H: ₹{{ "{:,.2f}".format(stock.high_52w) }}</small>
+                        </td>
+                        <td>{{ "{:,}".format(stock.volume) }}</td>
+                        <td class="text-end">
+                            {% if session.get('user_id') %}
+                            <button class="btn btn-sm btn-success px-3 me-1"
+                                    data-bs-toggle="modal" data-bs-target="#tradeModal"
+                                    data-stock-id="{{ stock.stock_id }}" data-symbol="{{ stock.symbol }}" data-name="{{ stock.company_name }}"
+                                    data-price="{{ stock.current_price }}" data-action="buy">
+                                Buy
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger px-2"
+                                    data-bs-toggle="modal" data-bs-target="#tradeModal"
+                                    data-stock-id="{{ stock.stock_id }}" data-symbol="{{ stock.symbol }}" data-name="{{ stock.company_name }}"
+                                    data-price="{{ stock.current_price }}" data-action="sell">
+                                Sell
+                            </button>
+                            {% else %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Login to Trade</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
