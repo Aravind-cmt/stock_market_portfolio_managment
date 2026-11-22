@@ -10,28 +10,12 @@ CREATE DATABASE IF NOT EXISTS stock_portfolio_db
 
 USE stock_portfolio_db;
 
--- Temporarily disable foreign key checks during schema re-creation
-SET FOREIGN_KEY_CHECKS = 0;
-
-DROP TABLE IF EXISTS Stock_Price_History;
-DROP TABLE IF EXISTS Password_Reset;
-DROP TABLE IF EXISTS Audit_Log;
-DROP TABLE IF EXISTS User_Roles;
-DROP TABLE IF EXISTS Roles;
-DROP TABLE IF EXISTS Watchlist;
-DROP TABLE IF EXISTS Portfolio;
-DROP TABLE IF EXISTS Transactions;
-DROP TABLE IF EXISTS Stocks;
-DROP TABLE IF EXISTS Users;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
 -- -----------------------------------------------------------------------------
 -- 1. Users Table
 -- Stores user authentication credentials, contact profile, account status,
 -- and simulated paper-trading wallet balance.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Users (
+CREATE TABLE IF NOT EXISTS Users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(120) NOT NULL UNIQUE,
@@ -48,7 +32,7 @@ CREATE TABLE Users (
 -- 2. Stocks Table
 -- Master equity registry with current market price and sector classification.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Stocks (
+CREATE TABLE IF NOT EXISTS Stocks (
     stock_id INT AUTO_INCREMENT PRIMARY KEY,
     symbol VARCHAR(15) NOT NULL UNIQUE,
     company_name VARCHAR(120) NOT NULL,
@@ -67,7 +51,7 @@ CREATE TABLE Stocks (
 -- 3. Transactions Table
 -- Immutable financial audit ledger recording every BUY and SELL order.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Transactions (
+CREATE TABLE IF NOT EXISTS Transactions (
     transaction_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     stock_id INT NOT NULL,
@@ -91,7 +75,7 @@ CREATE TABLE Transactions (
 -- Junction table resolving M:N relationship between Users and Stocks.
 -- Maintains net quantity and dynamically updated weighted average buy price.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Portfolio (
+CREATE TABLE IF NOT EXISTS Portfolio (
     portfolio_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     stock_id INT NOT NULL,
@@ -109,7 +93,7 @@ CREATE TABLE Portfolio (
 -- 5. Watchlist Table
 -- Tracks equities monitored by users with unique user-stock combination.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Watchlist (
+CREATE TABLE IF NOT EXISTS Watchlist (
     watchlist_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     stock_id INT NOT NULL,
@@ -123,7 +107,7 @@ CREATE TABLE Watchlist (
 -- 6. Roles Table
 -- System roles for Role-Based Access Control (RBAC).
 -- -----------------------------------------------------------------------------
-CREATE TABLE Roles (
+CREATE TABLE IF NOT EXISTS Roles (
     role_id INT AUTO_INCREMENT PRIMARY KEY,
     role_name VARCHAR(50) NOT NULL UNIQUE
 ) ENGINE=InnoDB;
@@ -132,7 +116,7 @@ CREATE TABLE Roles (
 -- 7. User_Roles Table
 -- Junction table assigning roles to users with auditing of assigner.
 -- -----------------------------------------------------------------------------
-CREATE TABLE User_Roles (
+CREATE TABLE IF NOT EXISTS User_Roles (
     user_id INT NOT NULL,
     role_id INT NOT NULL,
     assigned_by INT NULL,
@@ -147,7 +131,7 @@ CREATE TABLE User_Roles (
 -- 8. Audit_Log Table
 -- Complete compliance and operational audit log tracking state transitions.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Audit_Log (
+CREATE TABLE IF NOT EXISTS Audit_Log (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     acting_user_id INT NULL,
     affected_user_id INT NULL,
@@ -166,7 +150,7 @@ CREATE TABLE Audit_Log (
 -- 9. Password_Reset Table
 -- Secure token management for user password recovery workflows.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Password_Reset (
+CREATE TABLE IF NOT EXISTS Password_Reset (
     reset_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     reset_token_hash VARCHAR(255) NOT NULL,
@@ -180,7 +164,7 @@ CREATE TABLE Password_Reset (
 -- 10. Stock_Price_History Table
 -- Historical stock price ticks for technical analysis and trend charts.
 -- -----------------------------------------------------------------------------
-CREATE TABLE Stock_Price_History (
+CREATE TABLE IF NOT EXISTS Stock_Price_History (
     history_id INT AUTO_INCREMENT PRIMARY KEY,
     stock_id INT NOT NULL,
     price DECIMAL(12, 2) NOT NULL,

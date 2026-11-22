@@ -1,0 +1,10 @@
+<?php
+declare(strict_types=1);require_once __DIR__.'/../includes/bootstrap.php';require_once __DIR__.'/../includes/layout.php';
+$token=(string)($_GET['token']??$_POST['token']??'');
+if($_SERVER['REQUEST_METHOD']==='POST'){csrf_verify();$password=(string)($_POST['password']??'');$confirm=(string)($_POST['confirm_password']??'');
+ if(strlen($password)<8||$password!==$confirm)flash('Use matching passwords of at least 8 characters.','danger');
+ else{$rows=db()->query("SELECT reset_id,user_id,reset_token_hash FROM Password_Reset WHERE is_used=0 AND expiry_time>NOW()")->fetchAll();$reset=null;foreach($rows as$row){if(password_verify($token,(string)$row['reset_token_hash'])){$reset=$row;break;}}
+  if(!$reset)flash('The reset token is invalid or expired.','danger');
+  else{db()->beginTransaction();try{db()->prepare('UPDATE Users SET password_hash=? WHERE user_id=?')->execute([password_hash($password,PASSWORD_DEFAULT),(int)$reset['user_id']]);db()->prepare('UPDATE Password_Reset SET is_used=1 WHERE reset_id=?')->execute([(int)$reset['reset_id']]);db()->prepare("INSERT INTO Audit_Log (acting_user_id,affected_user_id,action,table_name,record_id,description) VALUES (?,?, 'PASSWORD_RESET','Users',?, 'Password reset completed')")->execute([(int)$reset['user_id'],(int)$reset['user_id'],(int)$reset['user_id']]);db()->commit();flash('Password updated successfully.','success');redirect('/user/login.php');}catch(Throwable$e){db()->rollBack();flash('Password reset could not be completed.','danger');}}
+ }}
+$body='<div class="auth-page"><div class="auth-card"><h1>Reset Password</h1><form method="post"><input type="hidden" name="csrf_token" value="'.e(csrf_token()).'"><input type="hidden" name="token" value="'.e($token).'"><div class="mb-3"><label class="form-label">New password</label><input class="form-control" name="password" type="password" minlength="8" required></div><div class="mb-3"><label class="form-label">Confirm password</label><input class="form-control" name="confirm_password" type="password" minlength="8" required></div><button class="btn btn-primary w-100">Reset Password</button></form></div></div>';render_layout('Reset Password',$body);

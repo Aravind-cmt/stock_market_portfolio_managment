@@ -1,0 +1,44 @@
+:root {
+    --navy: #0b1f33;
+    --navy-light: #15344f;
+    --blue: #2563eb;
+    --green: #16845b;
+    --red: #c0392b;
+    --border: #dbe3ea;
+    --background: #f4f7fa;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--background); color: #16202a; font-family: Arial, Helvetica, sans-serif; }
+.app-shell { min-height: 100vh; display: flex; }
+.sidebar { width: 238px; background: var(--navy); color: #fff; padding: 24px 16px; position: fixed; height: 100vh; overflow-y: auto; }
+.sidebar .brand { color: #fff; text-decoration: none; font-size: 22px; font-weight: 700; display: block; padding: 0 10px 24px; }
+.sidebar nav a { display: block; color: #cbd8e5; text-decoration: none; padding: 10px 12px; border-radius: 6px; margin: 3px 0; }
+.sidebar nav a:hover { background: var(--navy-light); color: #fff; }
+.sidebar nav .logout { color: #ffb9b0; margin-top: 24px; }
+.main-content { width: calc(100% - 238px); margin-left: 238px; padding: 28px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.page-header h1 { margin: 0; font-size: 26px; }
+.account-meta { display: flex; align-items: center; gap: 10px; }
+.badge-role { background: #e7edf3; color: var(--navy); padding: 6px 9px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+.card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(11,31,51,.04); }
+.card-value { font-size: 24px; font-weight: 700; color: var(--navy); }
+.table-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; }
+.table-card table { margin: 0; }
+.profit { color: var(--green); }
+.loss { color: var(--red); }
+.auth-page { width: 100%; min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.auth-card { width: 100%; max-width: 430px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 36px; box-shadow: 0 12px 30px rgba(11,31,51,.08); }
+.auth-card h1 { font-size: 24px; margin-bottom: 6px; }
+.auth-card .subtitle { color: #667788; margin-bottom: 24px; }
+.auth-card .form-control { height: 44px; }
+.login-actions { display: flex; justify-content: space-between; align-items: center; }
+@media (max-width: 900px) {
+    .sidebar { position: static; width: 100%; height: auto; }
+    .app-shell { display: block; }
+    .main-content { width: 100%; margin-left: 0; padding: 18px; }
+}
+@media print {
+    .sidebar, .no-print { display: none !important; }
+    .main-content { margin: 0; width: 100%; }
+}

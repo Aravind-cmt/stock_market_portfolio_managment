@@ -1,0 +1,12 @@
+<?php
+declare(strict_types=1);require_once __DIR__.'/../includes/bootstrap.php';require_once __DIR__.'/../includes/layout.php';
+$user=require_admin();
+if($_SERVER['REQUEST_METHOD']==='POST'&&isset($_POST['target_user_id'])){csrf_verify();$target=(int)$_POST['target_user_id'];$targetRole=current_role($target);if($targetRole==='SUPER_ADMIN'){flash('Super Admin account status cannot be changed.','danger');}else{$u=db()->prepare('SELECT account_status FROM Users WHERE user_id=?');$u->execute([$target]);$row=$u->fetch();if($row){$new=$row['account_status']==='ACTIVE'?'SUSPENDED':'ACTIVE';db()->prepare('UPDATE Users SET account_status=? WHERE user_id=?')->execute([$new,$target]);db()->prepare("INSERT INTO Audit_Log (acting_user_id,affected_user_id,action,table_name,record_id,previous_value,new_value,description) VALUES (?,?,?,?,?,?,?,?)")->execute([$user['user_id'],$target,'STATUS_CHANGE','Users',$target,$row['account_status'],$new,'Account status changed']);flash('Account status updated to '.$new.'.','success');}}}
+$search=trim((string)($_GET['search']??''));$sql="SELECT u.*,r.role_name FROM Users u JOIN User_Roles ur ON ur.user_id=u.user_id JOIN Roles r ON r.role_id=ur.role_id";$params=[];
+if($search!==''){$sql.=" WHERE u.name LIKE ? OR u.email LIKE ?";$params=["%$search%","%$search%"];} $sql.=' ORDER BY u.user_id';
+$stmt=db()->prepare($sql);$stmt->execute($params);$users=$stmt->fetchAll();
+$body='<form class="card mb-3 d-flex gap-2" method="get"><input class="form-control" name="search" placeholder="Search name or email" value="'.e($search).'"><button class="btn btn-primary">Search</button></form>';
+$body.='<div class="table-card"><table class="table table-hover"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead><tbody>';
+foreach($users as $u){$body.='<tr><td>'.(int)$u['user_id'].'</td><td>'.e($u['name']).'</td><td>'.e($u['email']).'</td><td>'.e($u['role_name']).'</td><td>'.e($u['account_status']).'</td><td>';
+ if($u['role_name']!=='SUPER_ADMIN'){$body.='<form method="post"><input type="hidden" name="csrf_token" value="'.e(csrf_token()).'"><input type="hidden" name="target_user_id" value="'.(int)$u['user_id'].'"><button class="btn btn-sm btn-outline-secondary">'.($u['account_status']==='ACTIVE'?'Suspend':'Activate').'</button></form>';}
+$body.='</td></tr>';}$body.='</tbody></table></div>';render_layout('User Management',$body,$user,true);
