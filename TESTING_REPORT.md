@@ -14,6 +14,9 @@
 | SQLite fallback removed | PASS |
 | PDO prepared statements used in data access | PASS |
 | CSRF token handling implemented | PASS |
+| Navy and champagne shared theme implemented | PASS |
+| Responsive sidebar and mobile navigation implemented | PASS |
+| Profile and printable report pages added | PASS |
 
 ## Not Verified
 
